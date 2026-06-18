@@ -8,6 +8,10 @@ export const ENV = {
   DATABASE_URL: process.env.DATABASE_URL,
   JWT_SECRET: process.env.JWT_SECRET || 'fallback_secret_change_me',
   FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  FRONTEND_URLS: (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:3000,http://localhost:8081,http://localhost:19006')
+    .split(',')
+    .map((url) => url.trim())
+    .filter(Boolean),
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
   

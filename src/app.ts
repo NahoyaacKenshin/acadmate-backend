@@ -6,9 +6,25 @@ import routes from '@/routes';
 
 const app = express();
 
+const corsOrigin: cors.CorsOptions['origin'] = (origin, callback) => {
+  if (!origin || ENV.FRONTEND_URLS.includes(origin)) {
+    callback(null, true);
+    return;
+  }
+
+  callback(new Error(`Origin ${origin} is not allowed by CORS`));
+};
+
+const healthPayload = () => ({
+  status: 'success',
+  message: `${ENV.APP_NAME} instance is healthy`,
+  timestamp: new Date().toISOString(),
+  environment: ENV.NODE_ENV
+});
+
 // --- Core Middleware ---
 app.use(cors({
-  origin: ENV.FRONTEND_URL,
+  origin: corsOrigin,
   credentials: true
 }));
 
@@ -18,12 +34,11 @@ app.use(cookieParser());
 
 // --- Simple Health Check ---
 app.get('/', (req: Request, res: Response) => {
-  res.status(200).json({
-    status: 'success',
-    message: `${ENV.APP_NAME} instance is healthy - 3B - New Features!`,
-    timestamp: new Date().toISOString(),
-    environment: ENV.NODE_ENV
-  });
+  res.status(200).json(healthPayload());
+});
+
+app.get('/api/health', (req: Request, res: Response) => {
+  res.status(200).json(healthPayload());
 });
 
 // --- Routes Folder Prepared ---

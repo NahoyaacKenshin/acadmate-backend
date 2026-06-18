@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { SignupUserService, LoginCredentialsService, VerifyEmailService, RefreshTokenService, ResendEmailVerificationService, GetMeService } from "@/services/auth";
 import { TokenExpiry, toMilliseconds } from "@/lib/jwt";
 import { ENV } from "@/config/env";
+import { TokenRepository } from "@/repositories/token.repository";
 
 export class AuthController {
   // Helper to set cookies
@@ -65,9 +66,19 @@ export class AuthController {
   };
 
   // Handle Logout
-  public logout = (req: Request, res: Response) => {
+  public logout = async (req: Request, res: Response) => {
     const isProduction = ENV.NODE_ENV === "production";
     const domain = isProduction ? ".cloomero.cloud" : undefined;
+    const refreshToken = req.body?.refreshToken || req.cookies?.refreshToken;
+
+    if (refreshToken) {
+      const tokenRepository = new TokenRepository();
+      const dbToken = await tokenRepository.findActiveRefreshToken(refreshToken);
+
+      if (dbToken) {
+        await tokenRepository.revokeToken(dbToken.id);
+      }
+    }
 
     res.clearCookie("accessToken", { domain });
     res.clearCookie("refreshToken", { domain });
