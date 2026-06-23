@@ -31,6 +31,8 @@ model User {
 
   role             Role      @default(USER) // default value from enum Role "USER"
   tokens           Token[]
+  subjects         Subject[]
+  tasks            Task[]
 }
 
 model Token {
@@ -46,4 +48,33 @@ model Token {
   user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, type])
+}
+
+model Subject {
+  id          String   @id @default(uuid())
+  name        String
+  color       String?  @default("#3B82F6") // Default blue
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  tasks       Task[]
+}
+
+model Task {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subjectId   String?
+  subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
 }

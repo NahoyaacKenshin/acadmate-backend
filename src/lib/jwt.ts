@@ -18,6 +18,19 @@ export function signRefreshToken(userId: string, role: string, duration: SignOpt
   return jwt.sign(payload, jwtSecret, { expiresIn: duration });
 }
 
+export function signPowerSyncToken(userId: string) {
+  const privateKey = process.env.POWERSYNC_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!privateKey) throw new Error("POWERSYNC_PRIVATE_KEY is not defined");
+  
+  const payload = {
+    sub: userId,
+    aud: "powersync",
+    iss: "acadmate",
+  };
+  
+  return jwt.sign(payload, privateKey, { algorithm: "RS256", expiresIn: "15m" });
+}
+
 export function verifyAccessToken(token: string): JwtPayload | null {
   try {
     const payload = jwt.verify(token, jwtSecret) as JwtPayload;

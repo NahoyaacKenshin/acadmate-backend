@@ -1,0 +1,145 @@
+{
+  "clientName": "Thunder Client",
+  "collectionName": "AcadMate API",
+  "collectionId": "c4240742-b068-4a11-8f5b-006f1d82136e",
+  "dateExported": "2026-06-23T12:00:00.000Z",
+  "version": "1.2",
+  "folders": [
+    {
+      "id": "e93e2b26-0925-4680-a638-cd581179ab4e",
+      "name": "Auth",
+      "containerId": "",
+      "created": "2026-06-23T12:00:00.000Z",
+      "sortNum": 10000
+    },
+    {
+      "id": "f5c9e3e1-4560-4966-8ff4-934d455dcf23",
+      "name": "Subjects",
+      "containerId": "",
+      "created": "2026-06-23T12:00:00.000Z",
+      "sortNum": 20000
+    },
+    {
+      "id": "022eb1f7-e215-46f4-b25b-07baf95b4cb5",
+      "name": "Tasks",
+      "containerId": "",
+      "created": "2026-06-23T12:00:00.000Z",
+      "sortNum": 30000
+    }
+  ],
+  "requests": [
+    {
+      "id": "bd0a30b5-e61e-42c2-83ff-015ba6ce80fb",
+      "containerId": "e93e2b26-0925-4680-a638-cd581179ab4e",
+      "name": "Signup",
+      "url": "{{baseUrl}}/auth/v1/signup",
+      "method": "POST",
+      "sortNum": 10000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+      }
+    },
+    {
+      "id": "2db4e9d0-8f92-411a-a038-f80e9eb8a071",
+      "containerId": "e93e2b26-0925-4680-a638-cd581179ab4e",
+      "name": "Login",
+      "url": "{{baseUrl}}/auth/v1/login",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password123\"\n}"
+      }
+    },
+    {
+      "id": "8b512c1a-bfec-4286-90e6-993d0de3e150",
+      "containerId": "e93e2b26-0925-4680-a638-cd581179ab4e",
+      "name": "Get PowerSync Token",
+      "url": "{{baseUrl}}/auth/v1/powersync-token",
+      "method": "GET",
+      "sortNum": 30000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": []
+    },
+    {
+      "id": "ce4b4ed6-6bba-4e94-82ea-2baef7d22f67",
+      "containerId": "f5c9e3e1-4560-4966-8ff4-934d455dcf23",
+      "name": "Get All Subjects",
+      "url": "{{baseUrl}}/subjects",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": []
+    },
+    {
+      "id": "e44c6883-9366-4180-aa1e-08c3cf0f74fb",
+      "containerId": "f5c9e3e1-4560-4966-8ff4-934d455dcf23",
+      "name": "Create Subject",
+      "url": "{{baseUrl}}/subjects",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"name\": \"Mathematics\",\n  \"color\": \"#FF0000\"\n}"
+      }
+    },
+    {
+      "id": "180b7b15-9759-4786-bb4d-624ab8d2a6a9",
+      "containerId": "022eb1f7-e215-46f4-b25b-07baf95b4cb5",
+      "name": "Get All Tasks",
+      "url": "{{baseUrl}}/tasks",
+      "method": "GET",
+      "sortNum": 10000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": []
+    },
+    {
+      "id": "fb6f0f5b-9d7a-4ec6-8968-3e5fcc02fba7",
+      "containerId": "022eb1f7-e215-46f4-b25b-07baf95b4cb5",
+      "name": "Create Task",
+      "url": "{{baseUrl}}/tasks",
+      "method": "POST",
+      "sortNum": 20000,
+      "created": "2026-06-23T12:00:00.000Z",
+      "modified": "2026-06-23T12:00:00.000Z",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "body": {
+        "type": "json",
+        "raw": "{\n  \"title\": \"Homework 1\",\n  \"description\": \"Do math problems\",\n  \"dueDate\": \"2026-07-01T00:00:00.000Z\",\n  \"subjectId\": \"uuid-here\"\n}"
+      }
+    }
+  ]
+}

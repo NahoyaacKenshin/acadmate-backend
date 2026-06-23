@@ -3,7 +3,7 @@ import { ENV } from '@/config/env';
 
 const startServer = () => {
   try {
-    app.listen(ENV.PORT, () => {
+    app.listen(ENV.PORT as number, '0.0.0.0', () => {
       console.log('--------------------------------------------------');
       console.log(`🚀 ${ENV.APP_NAME} started successfully!`);
       console.log(`📡 URL: ${ENV.BACKEND_URL}`);

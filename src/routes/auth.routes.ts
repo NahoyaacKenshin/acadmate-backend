@@ -20,4 +20,7 @@ router.post("/v1/logout", authController.logout);
 // Session Verification
 router.get("/v1/me", authMiddleware.execute, authController.me);
 
+// PowerSync Authentication
+router.get("/v1/powersync-token", authMiddleware.execute, authController.getPowerSyncToken);
+
 export default router;

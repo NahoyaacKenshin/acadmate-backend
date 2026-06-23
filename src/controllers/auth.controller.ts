@@ -99,4 +99,27 @@ export class AuthController {
     const result = await GetMeService(userId);
     return res.status(result.code).json(result);
   };
+
+  // Get PowerSync JWT Token
+  public getPowerSyncToken = async (req: Request, res: Response) => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const userId = (req as any).user?.sub;
+      if (!userId) {
+        return res.status(401).json({ code: 401, status: "error", message: "Unauthorized" });
+      }
+
+      // We dynamically import here or use the function we added to jwt.ts
+      const { signPowerSyncToken } = await import("@/lib/jwt");
+      
+      const token = signPowerSyncToken(userId);
+      return res.status(200).json({ 
+        token, 
+        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString() 
+      });
+    } catch (error) {
+      console.error("Error generating PowerSync token:", error);
+      return res.status(500).json({ code: 500, status: "error", message: "Internal server error" });
+    }
+  };
 }
