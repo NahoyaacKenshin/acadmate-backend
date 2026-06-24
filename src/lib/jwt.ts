@@ -28,7 +28,11 @@ export function signPowerSyncToken(userId: string) {
     iss: "acadmate",
   };
   
-  return jwt.sign(payload, privateKey, { algorithm: "RS256", expiresIn: "15m" });
+  return jwt.sign(payload, privateKey, { 
+    algorithm: "RS256", 
+    expiresIn: "15m",
+    keyid: "acadmate-key-1"
+  });
 }
 
 export function verifyAccessToken(token: string): JwtPayload | null {
