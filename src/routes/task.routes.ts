@@ -11,6 +11,7 @@ const authMiddleware = new AuthMiddleware();
 // All task routes require authentication
 router.use(authMiddleware.execute);
 
+router.get("/stats", taskController.getStats);
 router.get("/", taskController.getAll);
 router.post("/", validateSchema(createTaskSchema), taskController.create);
 router.put("/:id", validateSchema(updateTaskSchema), taskController.update);

@@ -39,4 +39,28 @@ export class TaskRepository {
       where: { id, userId },
     });
   }
+  async getStats(userId: string) {
+    const totalTasks = await prisma.task.count({ where: { userId } });
+    const completedTasks = await prisma.task.count({ where: { userId, completed: true } });
+    const overdueTasks = await prisma.task.count({
+      where: {
+        userId,
+        completed: false,
+        dueDate: {
+          lt: new Date(),
+        },
+      },
+    });
+    return { totalTasks, completedTasks, overdueTasks };
+  }
+
+  async findByTitleAndSubject(userId: string, title: string, subjectId: string) {
+    return prisma.task.findFirst({
+      where: {
+        userId,
+        title,
+        subjectId,
+      },
+    });
+  }
 }

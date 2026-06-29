@@ -19,11 +19,29 @@ export class TaskController {
     }
   };
 
+  public getStats = async (req: Request, res: Response) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req as any).user?.sub;
+    try {
+      const stats = await this.taskRepository.getStats(userId);
+      return res.status(200).json({ code: 200, status: "success", data: stats });
+    } catch (error: any) {
+      return res.status(500).json({ code: 500, status: "error", message: error.message });
+    }
+  };
+
   public create = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
     const { title, description, dueDate, completed, subjectId } = req.body;
     try {
+      if (subjectId) {
+        const existingTask = await this.taskRepository.findByTitleAndSubject(userId, title, subjectId);
+        if (existingTask) {
+          return res.status(400).json({ code: 400, status: "error", message: "Task with same title already exists for this subject" });
+        }
+      }
+
       const task = await this.taskRepository.create(userId, { title, description, dueDate, completed, subjectId });
       return res.status(201).json({ code: 201, status: "success", data: task });
     } catch (error: any) {
@@ -37,6 +55,13 @@ export class TaskController {
     const id = req.params.id as string;
     const { title, description, dueDate, completed, subjectId } = req.body;
     try {
+      if (title && subjectId) {
+        const existingTask = await this.taskRepository.findByTitleAndSubject(userId, title, subjectId);
+        if (existingTask && existingTask.id !== id) {
+          return res.status(400).json({ code: 400, status: "error", message: "Task with same title already exists for this subject" });
+        }
+      }
+
       const task = await this.taskRepository.update(id, userId, { title, description, dueDate, completed, subjectId });
       return res.status(200).json({ code: 200, status: "success", data: task });
     } catch (error: any) {
