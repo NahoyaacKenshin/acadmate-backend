@@ -2,13 +2,31 @@ import { Request, Response } from "express";
 import { prisma } from "@/lib/prisma";
 
 // Whitelist of tables that PowerSync is allowed to write to.
-// Keys must match the :table route param; values must match the Prisma model accessor.
+// Keys must match the local SQLite table names used by PowerSync (as defined in Schema.ts).
+// PowerSync sends op.table as-is in the :table route param via uploadData.
+// Values must match the Prisma model accessor.
 const ALLOWED_TABLES: Record<string, keyof typeof prisma> = {
-  tasks: "task",
-  subjects: "subject",
+  Task: "task",
+  Subject: "subject",
 };
 
 export class SyncController {
+  /**
+   * PowerSync sends SQLite integer 0/1 for booleans; coerce them for Prisma.
+   * Also strips `id` from data since it is provided separately via `where` or `create`.
+   */
+  private sanitizeData(table: string, data: Record<string, unknown>): Record<string, unknown> {
+    const sanitized = { ...data };
+    // Remove the id field from data — it's provided as a separate arg
+    delete sanitized.id;
+    if (table === "Task") {
+      if ("completed" in sanitized) {
+        sanitized.completed = sanitized.completed === 1 || sanitized.completed === true;
+      }
+    }
+    return sanitized;
+  }
+
   /**
    * POST /api/sync/:table
    *
@@ -41,14 +59,19 @@ export class SyncController {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const delegate = (prisma as any)[model];
+      const sanitized = this.sanitizeData(table, data ?? {});
 
       switch (action) {
         case "PUT":
-          await delegate.update({ where: { id }, data });
+          await delegate.upsert({ 
+            where: { id }, 
+            update: sanitized, 
+            create: { id, ...sanitized } 
+          });
           break;
 
         case "POST":
-          await delegate.create({ data: { id, ...data } });
+          await delegate.create({ data: { id, ...sanitized } });
           break;
 
         case "DELETE":
