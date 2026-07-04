@@ -15,3 +15,17 @@ streams:
       SELECT id, title, description, "dueDate", completed, "createdAt", "updatedAt", "userId", "subjectId" 
       FROM "Task" 
       WHERE "userId" = auth.user_id()
+
+  user_class_schedules:
+    auto_subscribe: true
+    query: >
+      SELECT id, "dayOfWeek", "startTime", "endTime", room, modality, "setType", "createdAt", "updatedAt", "userId", "subjectId" 
+      FROM "ClassSchedule" 
+      WHERE "userId" = auth.user_id()
+
+  user_calendar_events:
+    auto_subscribe: true
+    query: >
+      SELECT id, title, description, "startDate", "endDate", "allDay", location, color, "createdAt", "updatedAt", "userId", "subjectId" 
+      FROM "CalendarEvent" 
+      WHERE "userId" = auth.user_id()

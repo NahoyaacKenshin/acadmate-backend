@@ -8,6 +8,8 @@ import { prisma } from "@/lib/prisma";
 const ALLOWED_TABLES: Record<string, keyof typeof prisma> = {
   Task: "task",
   Subject: "subject",
+  ClassSchedule: "classSchedule",
+  CalendarEvent: "calendarEvent",
 };
 
 export class SyncController {
@@ -23,6 +25,12 @@ export class SyncController {
       if ("completed" in sanitized) {
         const c = sanitized.completed;
         sanitized.completed = c === 1 || c === '1' || c === true || c === 'true';
+      }
+    }
+    if (table === "CalendarEvent") {
+      if ("allDay" in sanitized) {
+        const c = sanitized.allDay;
+        sanitized.allDay = c === 1 || c === '1' || c === true || c === 'true';
       }
     }
     return sanitized;
