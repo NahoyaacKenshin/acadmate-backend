@@ -21,7 +21,8 @@ export class SyncController {
     delete sanitized.id;
     if (table === "Task") {
       if ("completed" in sanitized) {
-        sanitized.completed = sanitized.completed === 1 || sanitized.completed === true;
+        const c = sanitized.completed;
+        sanitized.completed = c === 1 || c === '1' || c === true || c === 'true';
       }
     }
     return sanitized;
@@ -70,6 +71,13 @@ export class SyncController {
           });
           break;
 
+        case "PATCH":
+          await delegate.update({
+            where: { id },
+            data: sanitized
+          });
+          break;
+
         case "POST":
           await delegate.create({ data: { id, ...sanitized } });
           break;
@@ -86,6 +94,10 @@ export class SyncController {
 
       return res.status(200).json({ code: 200, status: "success" });
     } catch (error: any) {
+      if (error.code === 'P2025') {
+        console.warn(`[Sync] ${action} on ${table} (${id}) ignored: Record not found (P2025)`);
+        return res.status(200).json({ code: 200, status: "success", message: "Ignored, record not found" });
+      }
       console.error(`[Sync] ${action} on ${table} (${id}) failed:`, error);
       return res
         .status(500)
