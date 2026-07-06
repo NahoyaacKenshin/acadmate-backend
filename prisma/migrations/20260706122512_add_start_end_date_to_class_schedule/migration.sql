@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "ClassSchedule" ADD COLUMN     "endDate" TIMESTAMP(3),
+ADD COLUMN     "startDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

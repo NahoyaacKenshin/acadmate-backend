@@ -1,0 +1,382 @@
+{
+    "info": {
+        "name": "AcadMate - Week 3 Backend",
+        "description": "Testing collection for Week 3 backend tasks: Calendar Core & Holidays.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Class Schedules",
+            "item": [
+                {
+                    "name": "Create Class Schedule",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"dayOfWeek\": 1,\n  \"startTime\": \"08:30\",\n  \"endTime\": \"10:00\",\n  \"room\": \"Room A\",\n  \"modality\": \"F2F\",\n  \"setType\": \"A\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/class-schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "class-schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Class Schedule (Validation Error)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"dayOfWeek\": 8,\n  \"startTime\": \"invalid\",\n  \"endTime\": \"10:00\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/class-schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "class-schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Class Schedules",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/class-schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "class-schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Class Schedule",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"modality\": \"ONLINE\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/class-schedules/{{scheduleId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "class-schedules",
+                                "{{scheduleId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Class Schedule",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/class-schedules/{{scheduleId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "class-schedules",
+                                "{{scheduleId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Calendar Events",
+            "item": [
+                {
+                    "name": "Create Calendar Event",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Project Meeting\",\n  \"startDate\": \"2026-07-10T10:00:00.000Z\",\n  \"allDay\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/events",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "events"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Multi-day Event",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"Hackathon\",\n  \"startDate\": \"2026-07-15T00:00:00.000Z\",\n  \"endDate\": \"2026-07-17T23:59:59.000Z\",\n  \"allDay\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/events",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "events"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get All Events",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/events",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "events"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Events by Date Range",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/events?startDate=2026-07-14T00:00:00.000Z",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "events"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "2026-07-14T00:00:00.000Z"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Event",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"location\": \"Library\",\n  \"color\": \"#FF0000\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/api/events/{{eventId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "events",
+                                "{{eventId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Delete Event",
+                    "request": {
+                        "method": "DELETE",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/events/{{eventId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "events",
+                                "{{eventId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "3. Holidays",
+            "item": [
+                {
+                    "name": "Get Current Year Holidays",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/holidays",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "holidays"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get 2027 Holidays",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/holidays?year=2027",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "holidays"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2027"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Holidays (Invalid Year)",
+                    "request": {
+                        "method": "GET",
+                        "url": {
+                            "raw": "{{baseUrl}}/api/holidays?year=invalid",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "holidays"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "invalid"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{bearerToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "http://localhost:3000",
+            "type": "string"
+        },
+        {
+            "key": "bearerToken",
+            "value": "YOUR_BEARER_TOKEN_HERE",
+            "type": "string"
+        },
+        {
+            "key": "scheduleId",
+            "value": "REPLACE_WITH_ID",
+            "type": "string"
+        },
+        {
+            "key": "eventId",
+            "value": "REPLACE_WITH_ID",
+            "type": "string"
+        }
+    ]
+}

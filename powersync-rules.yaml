@@ -19,7 +19,7 @@ streams:
   user_class_schedules:
     auto_subscribe: true
     query: >
-      SELECT id, "dayOfWeek", "startTime", "endTime", room, modality, "setType", "createdAt", "updatedAt", "userId", "subjectId" 
+      SELECT id, "dayOfWeek", "startTime", "endTime", room, modality, "setType", "startDate", "endDate", "createdAt", "updatedAt", "userId", "subjectId" 
       FROM "ClassSchedule" 
       WHERE "userId" = auth.user_id()
 
