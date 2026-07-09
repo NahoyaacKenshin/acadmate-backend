@@ -72,10 +72,10 @@ export class SyncController {
 
       switch (action) {
         case "PUT":
-          await delegate.upsert({ 
-            where: { id }, 
-            update: sanitized, 
-            create: { id, ...sanitized } 
+          await delegate.upsert({
+            where: { id },
+            update: sanitized,
+            create: { id, ...sanitized }
           });
           break;
 

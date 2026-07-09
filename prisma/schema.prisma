@@ -35,6 +35,7 @@ model User {
   tasks            Task[]
   classSchedules   ClassSchedule[]
   calendarEvents   CalendarEvent[]
+  examWeeks        ExamWeek[]
 }
 
 model Token {
@@ -155,3 +156,17 @@ model PhilippineHoliday {
   @@unique([date, name], name: "date_name")
   @@index([date])
 }
+
+model ExamWeek {
+  id        String   @id @default(uuid())
+  title     String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

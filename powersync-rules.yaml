@@ -29,3 +29,10 @@ streams:
       SELECT id, title, description, "startDate", "endDate", "allDay", location, color, "createdAt", "updatedAt", "userId", "subjectId" 
       FROM "CalendarEvent" 
       WHERE "userId" = auth.user_id()
+
+  user_exam_weeks:
+    auto_subscribe: true
+    query: >
+      SELECT id, title, "startDate", "endDate", "createdAt", "updatedAt", "userId" 
+      FROM "ExamWeek" 
+      WHERE "userId" = auth.user_id()
