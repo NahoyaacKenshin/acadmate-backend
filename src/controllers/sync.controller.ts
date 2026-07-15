@@ -10,6 +10,7 @@ const ALLOWED_TABLES: Record<string, keyof typeof prisma> = {
   Subject: "subject",
   ClassSchedule: "classSchedule",
   CalendarEvent: "calendarEvent",
+  ExamWeek: "examWeek",
 };
 
 export class SyncController {
@@ -21,18 +22,40 @@ export class SyncController {
     const sanitized = { ...data };
     // Remove the id field from data — it's provided as a separate arg
     delete sanitized.id;
+
+    // Helper to ensure date strings are full ISO-8601 format for Prisma
+    const ensureIsoDate = (val: unknown) => {
+      if (typeof val === "string" && val.length > 0) {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) return d.toISOString();
+      }
+      return val;
+    };
+
     if (table === "Task") {
       if ("completed" in sanitized) {
         const c = sanitized.completed;
         sanitized.completed = c === 1 || c === '1' || c === true || c === 'true';
       }
+      if ("dueDate" in sanitized) sanitized.dueDate = ensureIsoDate(sanitized.dueDate);
     }
     if (table === "CalendarEvent") {
       if ("allDay" in sanitized) {
         const c = sanitized.allDay;
         sanitized.allDay = c === 1 || c === '1' || c === true || c === 'true';
       }
+      if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
+      if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
     }
+    if (table === "ClassSchedule") {
+      if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
+      if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
+    }
+    if (table === "ExamWeek") {
+      if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
+      if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
+    }
+
     return sanitized;
   }
 
