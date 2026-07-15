@@ -29,10 +29,13 @@ model User {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  role             Role      @default(USER) // default value from enum Role "USER"
+  role             Role      @default(USER)
   tokens           Token[]
   subjects         Subject[]
   tasks            Task[]
+  classSchedules   ClassSchedule[]
+  calendarEvents   CalendarEvent[]
+  examWeeks        ExamWeek[]
 }
 
 model Token {
@@ -60,7 +63,9 @@ model Subject {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
-  tasks       Task[]
+  tasks            Task[]
+  classSchedules   ClassSchedule[]
+  calendarEvents   CalendarEvent[]
 }
 
 model Task {
@@ -78,3 +83,90 @@ model Task {
   subjectId   String?
   subject     Subject? @relation(fields: [subjectId], references: [id], onDelete: SetNull)
 }
+
+// ── Week 3: Calendar & Scheduler ────────────────────────────────────────────
+
+enum Modality {
+  F2F
+  ONLINE
+  HYBRID
+}
+
+enum SetType {
+  A
+  B
+  BOTH
+}
+
+enum HolidayType {
+  REGULAR
+  SPECIAL
+}
+
+model ClassSchedule {
+  id        String    @id @default(uuid())
+  dayOfWeek Int       // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+  startTime String    // "HH:MM" 24-hour format
+  endTime   String    // "HH:MM" 24-hour format
+  room      String?
+  modality  Modality  @default(F2F)
+  setType   SetType?  // null = every week, A = Set A weeks, B = Set B weeks
+  startDate DateTime  @default(now())
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subjectId String?
+  subject   Subject?  @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+}
+
+model CalendarEvent {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?  // null = same-day event
+  allDay      Boolean    @default(false)
+  location    String?
+  color       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  userId      String
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  subjectId   String?
+  subject     Subject?   @relation(fields: [subjectId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, startDate])
+}
+
+model PhilippineHoliday {
+  id   String      @id @default(uuid())
+  date DateTime
+  name String
+  type HolidayType
+
+  @@unique([date, name], name: "date_name")
+  @@index([date])
+}
+
+model ExamWeek {
+  id        String   @id @default(uuid())
+  title     String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
