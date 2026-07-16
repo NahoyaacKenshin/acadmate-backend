@@ -1,0 +1,90 @@
+{
+  "info": {
+    "name": "AcadMate - Schedule Parser",
+    "description": "Tests for the AI Schedule Parser endpoints (Week 4)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Parse Schedule (Plain Text)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "text",
+              "value": "MWF - Math 101, 7:30-9:00, Room 301, F2F\nTTh - Physics 201, 10:00-11:30, Room 402, Online\nPrelims Week: Aug 11-15, 2026",
+              "type": "text"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/schedule-parser/parse",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "schedule-parser",
+            "parse"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Parse Schedule (File Upload)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}",
+            "type": "text"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": []
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/api/schedule-parser/parse",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "api",
+            "schedule-parser",
+            "parse"
+          ]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "access_token",
+      "value": "YOUR_ACCESS_TOKEN_HERE",
+      "type": "string"
+    }
+  ]
+}
