@@ -49,14 +49,17 @@ export async function generateWithFallback(parts: GeminiPart[]): Promise<string>
     } catch (err: unknown) {
       lastError = err;
       const message = err instanceof Error ? err.message : String(err);
-      const isRateLimited =
+      const isTransientError =
         message.includes("429") ||
+        message.includes("503") ||
+        message.includes("500") ||
         message.toLowerCase().includes("resource exhausted") ||
-        message.toLowerCase().includes("quota");
+        message.toLowerCase().includes("quota") ||
+        message.toLowerCase().includes("service unavailable");
 
-      if (isRateLimited) {
+      if (isTransientError) {
         console.warn(
-          `[Gemini] Rate limit hit on ${modelName}. Cascading to next model...`
+          `[Gemini] Transient error or rate limit hit on ${modelName}. Cascading to next model...`
         );
         continue;
       }
