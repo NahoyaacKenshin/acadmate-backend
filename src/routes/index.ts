@@ -7,6 +7,7 @@ import classScheduleRoutes from "@/routes/class-schedule.routes";
 import calendarEventRoutes from "@/routes/calendar-event.routes";
 import holidayRoutes from "@/routes/holiday.routes";
 import scheduleParserRoutes from "@/routes/schedule-parser.routes";
+import adminRoutes from "@/routes/admin.routes";
 // import knowledgeBaseRoutes from "@/routes/knowledgebase.routes";
 // import aiRoutes from "@/routes/ai.routes";
 
@@ -35,6 +36,9 @@ router.use("/sync", syncRoutes);
 
 // AI Schedule Parser Endpoint
 router.use("/schedule-parser", scheduleParserRoutes);
+
+// Admin Endpoints (role-protected)
+router.use("/admin", adminRoutes);
 
 // Knowledge Base Endpoints
 // router.use("/knowledgebase", knowledgeBaseRoutes);

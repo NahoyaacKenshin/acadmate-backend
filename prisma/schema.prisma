@@ -169,4 +169,40 @@ model ExamWeek {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+// ── Week 4: Admin System & Set A/B Scheduling Logic ──────────────────────────
+
+enum StudentSet {
+  A
+  B
+}
+
+enum SemesterRuleType {
+  SATURDAY_SET_A  // This Saturday is Face-to-Face for Set A
+  SATURDAY_SET_B  // This Saturday is Face-to-Face for Set B
+}
+
+/// Global admin-defined rules for a semester (e.g. which Saturdays are Set A / Set B).
+/// Synced read-only to all student clients via PowerSync.
+model SemesterRule {
+  id        String           @id @default(uuid())
+  date      DateTime         // The specific date this rule applies to
+  ruleType  SemesterRuleType
+  label     String?          // Optional human-readable label (e.g. "Set A Saturday - Week 2")
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([date])
+  @@unique([date, ruleType])
+}
+
+/// Global admin-defined mapping from degree program name to Set A or Set B.
+/// Synced read-only to all student clients via PowerSync.
+model ProgramMapping {
+  id          String     @id @default(uuid())
+  programName String     @unique // e.g. "BSIT", "BEED", "BSHM"
+  studentSet  StudentSet // A or B
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 }

@@ -36,3 +36,16 @@ streams:
       SELECT id, title, "startDate", "endDate", "createdAt", "updatedAt", "userId" 
       FROM "ExamWeek" 
       WHERE "userId" = auth.user_id()
+
+  # Global admin-managed tables — synced to ALL authenticated users (no user_id filter)
+  global_semester_rules:
+    auto_subscribe: true
+    query: >
+      SELECT id, date, "ruleType", label, "createdAt", "updatedAt"
+      FROM "SemesterRule"
+
+  global_program_mappings:
+    auto_subscribe: true
+    query: >
+      SELECT id, "programName", "studentSet", "createdAt", "updatedAt"
+      FROM "ProgramMapping"

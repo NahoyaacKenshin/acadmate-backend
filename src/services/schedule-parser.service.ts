@@ -56,7 +56,15 @@ export interface ParsedScheduleResult {
 
 // ── Prompt ────────────────────────────────────────────────────────────────────
 
-const SYSTEM_PROMPT = `You are an intelligent academic schedule extractor for a Philippine university student planner app.
+const buildSystemPrompt = (studentSet?: "A" | "B"): string => {
+  const setInstruction = studentSet
+    ? `\n- STUDENT SET: This student belongs to Set ${studentSet}. When a class schedule lists separate rooms for ` +
+      `Set A and Set B (e.g. columns labeled "SET A ROOM" and "SET B ROOM"), extract ONLY the room assigned ` +
+      `to Set ${studentSet}. If that room says "ONLINE", set modality to "ONLINE" and room to null. ` +
+      `Always set setType to "${studentSet}" for alternating Saturday classes unless the class runs every week (use "BOTH").`
+    : "";
+
+  return `You are an intelligent academic schedule extractor for a Philippine university student planner app.
 
 Analyze the provided content and extract ALL schedule-related information into the following JSON structure.
 Do NOT include any explanation, markdown, or text outside the JSON object.
@@ -102,7 +110,21 @@ Rules:
 - If the document contains exam/holiday periods (e.g. Prelims Week, Christmas Break), add them to examWeeks.
 - Merge split time entries (e.g. "MWF 7:30-9:00") into separate classSchedule items per day.
 - If the document refers to Philippine official holidays (e.g. Rizal Day, Independence Day), add them as calendarEvents with allDay: true.
-- If no items exist for a category, return an empty array [].`;
+- If no items exist for a category, return an empty array [].${setInstruction}`;
+};
+
+const MERGE_PROMPT_SUFFIX = (current: string) => `
+
+IMPORTANT — MERGE INSTRUCTION:
+The user already has the following parsed schedule from a previous document:
+${current}
+
+Using the new document above, produce the FINAL merged schedule:
+- If the new document adds detail to an existing class (e.g. updates setType from null to "A", changes room, adds dates), UPDATE that existing entry.
+- If the new document contains a class NOT already in the list, ADD it.
+- If the new document contains exam weeks or events NOT already in the list, ADD them.
+- Do NOT create duplicate entries for the same subject, day, and time slot.
+- Return the complete final merged JSON for ALL arrays (classSchedules, calendarEvents, examWeeks).`;
 
 // ── Text Extraction Helpers ────────────────────────────────────────────────────
 
@@ -128,25 +150,31 @@ export type SupportedMimeType =
 
 export async function parseScheduleFromFile(
   buffer: Buffer,
-  mimeType: SupportedMimeType
+  mimeType: SupportedMimeType,
+  currentSchedule?: string,
+  studentSet?: "A" | "B",
 ): Promise<ParsedScheduleResult> {
+  const SYSTEM_PROMPT = buildSystemPrompt(studentSet);
   // ── 1. Extract content depending on file type ─────────────────────────────
   let parts: GeminiPart[];
 
   if (mimeType === "application/pdf") {
     const text = await extractFromPdf(buffer);
-    parts = [{ text: `${SYSTEM_PROMPT}\n\nDocument Content:\n${text}` }];
+    const mergeNote = currentSchedule ? MERGE_PROMPT_SUFFIX(currentSchedule) : "";
+    parts = [{ text: `${SYSTEM_PROMPT}${mergeNote}\n\nDocument Content:\n${text}` }];
   } else if (
     mimeType ===
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
     const text = await extractFromDocx(buffer);
-    parts = [{ text: `${SYSTEM_PROMPT}\n\nDocument Content:\n${text}` }];
+    const mergeNote = currentSchedule ? MERGE_PROMPT_SUFFIX(currentSchedule) : "";
+    parts = [{ text: `${SYSTEM_PROMPT}${mergeNote}\n\nDocument Content:\n${text}` }];
   } else {
     // Image — pass directly to Gemini Vision as base64
     const base64 = buffer.toString("base64");
+    const mergeNote = currentSchedule ? MERGE_PROMPT_SUFFIX(currentSchedule) : "";
     parts = [
-      { text: SYSTEM_PROMPT },
+      { text: mergeNote ? `${SYSTEM_PROMPT}${mergeNote}` : SYSTEM_PROMPT },
       { inlineData: { mimeType, data: base64 } },
     ];
   }

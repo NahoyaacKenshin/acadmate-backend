@@ -46,7 +46,7 @@ export const uploadMiddleware = multer({
       );
     }
   },
-}).single("file");
+}).any();
 
 // ── Controller ────────────────────────────────────────────────────────────────
 
@@ -60,11 +60,23 @@ export class ScheduleParserController {
     try {
       let buffer: Buffer;
       let mimeType: SupportedMimeType;
+      const currentSchedule: string | undefined =
+        typeof req.body?.currentSchedule === "string" && req.body.currentSchedule.length > 0
+          ? req.body.currentSchedule
+          : undefined;
 
-      if (req.file) {
-        // ── File upload path ────────────────────────────────────────────────
-        buffer = req.file.buffer;
-        mimeType = req.file.mimetype as SupportedMimeType;
+      const studentSet: "A" | "B" | undefined =
+        req.body?.studentSet === "A" || req.body?.studentSet === "B"
+          ? req.body.studentSet
+          : undefined;
+
+      const files = req.files as Express.Multer.File[] | undefined;
+      const file = files && files.length > 0 ? files[0] : undefined;
+
+      if (file) {
+        // —— File upload path
+        buffer = file.buffer;
+        mimeType = file.mimetype as SupportedMimeType;
       } else {
         res.status(400).json({
           status: "error",
@@ -73,7 +85,7 @@ export class ScheduleParserController {
         return;
       }
 
-      const result = await parseScheduleFromFile(buffer, mimeType);
+      const result = await parseScheduleFromFile(buffer, mimeType, currentSchedule, studentSet);
 
       res.status(200).json({
         status: "success",
