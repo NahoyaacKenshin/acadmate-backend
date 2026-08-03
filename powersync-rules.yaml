@@ -30,14 +30,13 @@ streams:
       FROM "CalendarEvent" 
       WHERE "userId" = auth.user_id()
 
-  user_exam_weeks:
+  # Global admin-managed tables — synced to ALL authenticated users (no user_id filter)
+  global_exam_weeks:
     auto_subscribe: true
     query: >
       SELECT id, title, "startDate", "endDate", "createdAt", "updatedAt", "userId" 
-      FROM "ExamWeek" 
-      WHERE "userId" = auth.user_id()
+      FROM "ExamWeek"
 
-  # Global admin-managed tables — synced to ALL authenticated users (no user_id filter)
   global_semester_rules:
     auto_subscribe: true
     query: >
