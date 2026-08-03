@@ -36,6 +36,8 @@ model User {
   classSchedules   ClassSchedule[]
   calendarEvents   CalendarEvent[]
   examWeeks        ExamWeek[]
+  notebooks        Notebook[]
+  sources          Source[]
 }
 
 model Token {
@@ -201,4 +203,76 @@ model ProgramMapping {
   studentSet  StudentSet // A or B
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
-}
+}
+
+// ── Week 5: AI Notebook & RAG Pipeline ────────────────────────────────────────
+
+enum SourceFileType {
+  PDF
+  IMAGE
+  TEXT
+}
+
+enum SourceStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+/// A user-created notebook that groups uploaded study materials.
+model Notebook {
+  id          String   @id @default(uuid())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userId  String
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources Source[]
+
+  @@index([userId])
+}
+
+/// A single uploaded file (PDF, image, text) inside a Notebook.
+model Source {
+  id          String         @id @default(uuid())
+  fileName    String
+  fileType    SourceFileType
+  storagePath String         // Supabase Storage object path
+  status      SourceStatus   @default(PENDING)
+  rawText     String?        // Extracted full text (populated after processing)
+  errorMsg    String?        // Populated if status = FAILED
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  notebookId String
+  notebook   Notebook      @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunks     SourceChunk[]
+
+  @@index([notebookId])
+  @@index([userId])
+}
+
+/// A single overlapping text chunk from a Source, with a pgvector embedding.
+/// The `embedding` column uses the native pgvector type — stored as Unsupported
+/// and queried via raw SQL ($queryRaw / $executeRaw).
+model SourceChunk {
+  id         String   @id @default(uuid())
+  chunkIndex Int      // 0-based order within the source
+  content    String   // Raw text of this chunk (~500 words)
+  /// pgvector 768-dimensional embedding from Gemini text-embedding-004
+  embedding  Unsupported("vector(768)")?
+  createdAt  DateTime @default(now())
+
+  sourceId   String
+  source     Source @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  notebookId String
+
+  @@index([sourceId])
+  @@index([notebookId])
+}
+

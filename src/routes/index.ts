@@ -8,7 +8,7 @@ import calendarEventRoutes from "@/routes/calendar-event.routes";
 import holidayRoutes from "@/routes/holiday.routes";
 import scheduleParserRoutes from "@/routes/schedule-parser.routes";
 import adminRoutes from "@/routes/admin.routes";
-// import knowledgeBaseRoutes from "@/routes/knowledgebase.routes";
+import notebookRoutes from "@/routes/notebook.routes";
 // import aiRoutes from "@/routes/ai.routes";
 
 const router = Router();
@@ -40,10 +40,11 @@ router.use("/schedule-parser", scheduleParserRoutes);
 // Admin Endpoints (role-protected)
 router.use("/admin", adminRoutes);
 
-// Knowledge Base Endpoints
-// router.use("/knowledgebase", knowledgeBaseRoutes);
+// AI Notebook Endpoints (Week 5)
+router.use("/notebooks", notebookRoutes);
 
-// AI Endpoints
+// AI Chat Endpoints (future)
 // router.use("/ai", aiRoutes);
 
-export default router;
+export default router;
+

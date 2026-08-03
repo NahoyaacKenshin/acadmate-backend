@@ -14,6 +14,11 @@ export const ENV = {
     .filter(Boolean),
   BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000',
   GEMINI_API_KEY: process.env.GEMINI_API_KEY,
+
+  // Supabase Storage (Week 5 — AI Notebook)
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'notebook-sources',
   
   SMTP: {
     HOST: process.env.SMTP_HOST,

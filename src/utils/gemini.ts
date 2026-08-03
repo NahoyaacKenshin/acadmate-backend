@@ -76,3 +76,18 @@ export async function generateWithFallback(parts: GeminiPart[]): Promise<string>
     }`
   );
 }
+
+/**
+ * Generates a 768-dimensional text embedding vector using Gemini's
+ * `text-embedding-004` model. Used for RAG (Retrieval-Augmented Generation)
+ * in the AI Notebook pipeline.
+ *
+ * @param text - The text content to embed (should be ~500 words / chunk).
+ * @returns An array of 768 floats representing the semantic vector.
+ */
+export async function generateEmbedding(text: string): Promise<number[]> {
+  const model = genAI.getGenerativeModel({ model: 'text-embedding-004' });
+  const result = await model.embedContent(text);
+  return result.embedding.values;
+}
+
