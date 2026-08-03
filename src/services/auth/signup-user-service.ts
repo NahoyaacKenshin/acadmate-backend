@@ -29,6 +29,9 @@ export async function SignupUserService(name: string, email: string, password: s
     // Updated path to include /api/auth/v1 for backend testing
     const emailVerificationURL = `${process.env.BACKEND_URL}/api/auth/v1/verify-email?token=${encodeURIComponent(token)}`;
 
+    // Always log verification URL for easy dev testing
+    console.log(`\n[DEV VERIFICATION LINK] User ${email}:\n${emailVerificationURL}\n`);
+
     // Format Email HTML
     const html = renderTemplate("verify-email.html", {
       name: created.name ?? "there",
@@ -36,18 +39,22 @@ export async function SignupUserService(name: string, email: string, password: s
       expiresAt: expiresAt.toUTCString(),
     });
 
-    // Send Email Verification
-    await sendEmail({
-      to: created.email ?? email,
-      subject: "Verify your email address",
-      html,
-    });
+    // Send Email Verification (Non-fatal if SMTP network drops)
+    try {
+      await sendEmail({
+        to: created.email ?? email,
+        subject: "Verify your email address",
+        html,
+      });
+    } catch (mailError) {
+      console.error("[SignupUserService] Verification email send failed (non-fatal):", mailError);
+    }
 
     // Success message
     return {
       code: 200,
       status: "success",
-      message: "Created account successfully! Please verify your email.",
+      message: "Created account successfully! Please check your email to verify.",
       data: { user: created },
     };
 

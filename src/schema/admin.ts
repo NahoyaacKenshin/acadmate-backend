@@ -2,26 +2,56 @@ import { z } from "zod";
 
 // ── SemesterRule ──────────────────────────────────────────────────────────────
 
-export const SemesterRuleTypeEnum = z.enum(["SATURDAY_SET_A", "SATURDAY_SET_B"]);
+export const StudentSetEnum = z.enum(["A", "B"]);
 
 export const createSemesterRuleSchema = z.object({
-  date: z.string().datetime({ message: "date must be a valid ISO-8601 datetime string" }),
-  ruleType: SemesterRuleTypeEnum,
-  label: z.string().max(100).optional(),
+  body: z.object({
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate must be in YYYY-MM-DD format (e.g. 2026-07-25)" }),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "endDate must be in YYYY-MM-DD format" })
+      .optional()
+      .nullable(),
+    dayOfWeek: z.number().int().min(0).max(6),
+    setType: StudentSetEnum,
+    label: z.string().max(100).optional().nullable(),
+  }),
 });
 
-export const updateSemesterRuleSchema = createSemesterRuleSchema.partial();
+export const updateSemesterRuleSchema = z.object({
+  body: z.object({
+    startDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "startDate must be in YYYY-MM-DD format" })
+      .optional(),
+    endDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "endDate must be in YYYY-MM-DD format" })
+      .optional()
+      .nullable(),
+    dayOfWeek: z.number().int().min(0).max(6).optional(),
+    setType: StudentSetEnum.optional(),
+    label: z.string().max(100).optional().nullable(),
+  }),
+});
 
 // ── ProgramMapping ────────────────────────────────────────────────────────────
 
-export const StudentSetEnum = z.enum(["A", "B"]);
-
 export const createProgramMappingSchema = z.object({
-  programName: z.string().min(1).max(50),
-  studentSet: StudentSetEnum,
+  body: z.object({
+    programName: z.string().min(1).max(50),
+    studentSet: StudentSetEnum,
+  }),
 });
 
-export const updateProgramMappingSchema = createProgramMappingSchema.partial();
+export const updateProgramMappingSchema = z.object({
+  body: z.object({
+    programName: z.string().min(1).max(50).optional(),
+    studentSet: StudentSetEnum.optional(),
+  }),
+});
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 

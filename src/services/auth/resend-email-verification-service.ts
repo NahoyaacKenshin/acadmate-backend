@@ -22,21 +22,12 @@ export async function ResendEmailVerificationService(email: string) {
 
     // Check the Previous Email Verification Token
     const previousToken = await tokenRepository.findLatestEmailVerificationTokenByUser(user.id);
-    if (!previousToken) {
-      return { code: 400, status: "error", message: "No verification token available to resend" };
+
+    // If there's an existing unexpired valid token, revoke it and create a fresh one
+    if (previousToken) {
+      await tokenRepository.revokeToken(previousToken.id);
     }
 
-    // Check if the token is already consumed
-    if (previousToken.consumedAt) {
-      return { code: 400, status: "error", message: "Verification link already used" };
-    }
-
-    // Check if there's still valid token
-    if (previousToken.expiresAt.getTime() > Date.now()) {
-      return { code: 400, status: "error", message: "Current verification link is still valid" };
-    }
-
-    await tokenRepository.revokeToken(previousToken.id);
     const token = crypto.randomUUID();
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
@@ -44,17 +35,23 @@ export async function ResendEmailVerificationService(email: string) {
 
     const emailVerificationURL = `${process.env.BACKEND_URL}/api/auth/v1/verify-email?token=${encodeURIComponent(token)}`;
 
+    console.log(`\n[DEV RESEND VERIFICATION LINK] User ${email}:\n${emailVerificationURL}\n`);
+
     const html = renderTemplate("verify-email.html", {
       name: user.name ?? "there",
       emailVerificationURL,
       expiresAt: expiresAt.toUTCString(),
     });
 
-    await sendEmail({
-      to: user.email ?? email,
-      subject: "Verify your email address",
-      html,
-    });
+    try {
+      await sendEmail({
+        to: user.email ?? email,
+        subject: "Verify your email address",
+        html,
+      });
+    } catch (mailError) {
+      console.error("[ResendEmailVerificationService] Send mail failed (non-fatal):", mailError);
+    }
 
     return {
       code: 200,

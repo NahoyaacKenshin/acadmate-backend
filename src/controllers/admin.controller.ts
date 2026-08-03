@@ -35,7 +35,7 @@ export class AdminController {
   listSemesterRules = async (_req: Request, res: Response): Promise<void> => {
     try {
       const rules = await prisma.semesterRule.findMany({
-        orderBy: { date: "asc" },
+        orderBy: { startDate: "asc" },
       });
       res.status(200).json({ status: "success", data: rules });
     } catch (err) {
@@ -46,9 +46,15 @@ export class AdminController {
   /** POST /api/admin/semester-rules */
   createSemesterRule = async (req: Request, res: Response): Promise<void> => {
     try {
-      const input = createSemesterRuleSchema.parse(req.body);
+      const { startDate, endDate, dayOfWeek, setType, label } = req.body;
       const rule = await prisma.semesterRule.create({
-        data: { ...input, date: new Date(input.date) },
+        data: {
+          startDate: new Date(startDate),
+          endDate: endDate ? new Date(endDate) : null,
+          dayOfWeek: Number(dayOfWeek),
+          setType,
+          label: label || null,
+        },
       });
       res.status(201).json({ status: "success", data: rule });
     } catch (err) {
@@ -60,10 +66,16 @@ export class AdminController {
   updateSemesterRule = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id as string;
-      const input = updateSemesterRuleSchema.parse(req.body);
+      const { startDate, endDate, dayOfWeek, setType, label } = req.body;
       const rule = await prisma.semesterRule.update({
         where: { id },
-        data: { ...input, date: input.date ? new Date(input.date) : undefined },
+        data: {
+          ...(startDate ? { startDate: new Date(startDate) } : {}),
+          ...(endDate !== undefined ? { endDate: endDate ? new Date(endDate) : null } : {}),
+          ...(dayOfWeek !== undefined ? { dayOfWeek: Number(dayOfWeek) } : {}),
+          ...(setType ? { setType } : {}),
+          ...(label !== undefined ? { label: label || null } : {}),
+        },
       });
       res.status(200).json({ status: "success", data: rule });
     } catch (err) {
@@ -99,8 +111,10 @@ export class AdminController {
   /** POST /api/admin/program-mappings */
   createProgramMapping = async (req: Request, res: Response): Promise<void> => {
     try {
-      const input = createProgramMappingSchema.parse(req.body);
-      const mapping = await prisma.programMapping.create({ data: input });
+      const { programName, studentSet } = req.body;
+      const mapping = await prisma.programMapping.create({
+        data: { programName, studentSet },
+      });
       res.status(201).json({ status: "success", data: mapping });
     } catch (err) {
       this.handleError(res, err, "createProgramMapping");
@@ -111,8 +125,14 @@ export class AdminController {
   updateProgramMapping = async (req: Request, res: Response): Promise<void> => {
     try {
       const id = req.params.id as string;
-      const input = updateProgramMappingSchema.parse(req.body);
-      const mapping = await prisma.programMapping.update({ where: { id }, data: input });
+      const { programName, studentSet } = req.body;
+      const mapping = await prisma.programMapping.update({
+        where: { id },
+        data: {
+          ...(programName ? { programName } : {}),
+          ...(studentSet ? { studentSet } : {}),
+        },
+      });
       res.status(200).json({ status: "success", data: mapping });
     } catch (err) {
       this.handleError(res, err, "updateProgramMapping");
@@ -224,6 +244,12 @@ export class AdminController {
     const message = err instanceof Error ? err.message : "An unexpected error occurred";
     console.error(`[AdminController.${context}]`, err);
 
+    if (err && typeof err === "object" && "name" in err && err.name === "ZodError") {
+      const zodErr = err as unknown as { errors: { path: (string | number)[]; message: string }[] };
+      const details = zodErr.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ");
+      res.status(400).json({ status: "error", message: `Validation failed: ${details}` });
+      return;
+    }
     if (message.includes("Record to update not found") || message.includes("Record to delete not found")) {
       res.status(404).json({ status: "error", message: "Record not found" });
       return;

@@ -41,7 +41,7 @@ streams:
   global_semester_rules:
     auto_subscribe: true
     query: >
-      SELECT id, date, "ruleType", label, "createdAt", "updatedAt"
+      SELECT id, "startDate", "endDate", "dayOfWeek", "setType", label, "createdAt", "updatedAt"
       FROM "SemesterRule"
 
   global_program_mappings:
@@ -49,3 +49,10 @@ streams:
     query: >
       SELECT id, "programName", "studentSet", "createdAt", "updatedAt"
       FROM "ProgramMapping"
+
+  global_holidays:
+    auto_subscribe: true
+    query: >
+      SELECT id, date, name, type
+      FROM "PhilippineHoliday"
+
