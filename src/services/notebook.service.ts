@@ -165,9 +165,9 @@ async function processSource(sourceId: string, buffer: Buffer, mimeType: string)
       await prisma.$executeRaw`
         INSERT INTO "SourceChunk" (id, "sourceId", "notebookId", "chunkIndex", content, embedding, "createdAt")
         VALUES (
-          gen_random_uuid(),
-          ${sourceId}::uuid,
-          ${source.notebookId}::uuid,
+          gen_random_uuid()::text,
+          ${sourceId},
+          ${source.notebookId},
           ${i},
           ${chunks[i]},
           ${vectorLiteral}::vector,

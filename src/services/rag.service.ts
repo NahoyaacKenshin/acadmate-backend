@@ -87,7 +87,7 @@ export async function searchSimilarChunks(
       sc.embedding <=> ${vectorLiteral}::vector AS distance
     FROM "SourceChunk" sc
     JOIN "Source" s ON s.id = sc."sourceId"
-    WHERE sc."notebookId" = ${notebookId}::uuid
+    WHERE sc."notebookId" = ${notebookId}
       AND s.status = 'READY'
       AND sc.embedding IS NOT NULL
     ORDER BY distance ASC
