@@ -13,10 +13,7 @@
  *      - Updating Source status (READY | FAILED)
  */
 
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const pdfParse = require('pdf-parse') as (buffer: Buffer) => Promise<{ text: string }>;
-
+import { PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
@@ -38,8 +35,28 @@ async function extractText(
   mimeType: string
 ): Promise<string> {
   if (fileType === 'PDF') {
-    const data = await pdfParse(buffer);
-    return data.text;
+    try {
+      const parser = new PDFParse({ data: buffer });
+      const parsed = await parser.getText();
+      const text = parsed?.text?.trim() ?? '';
+      const cleanText = text.replace(/-- \d+ of \d+ --/g, '').trim();
+      if (cleanText.length > 20) {
+        return text;
+      }
+    } catch (pdfErr) {
+      console.warn('[NotebookService] PDFParse failed, falling back to Gemini Vision OCR:', pdfErr);
+    }
+
+    // Fallback: Scanned/Image PDF OCR via Gemini Vision
+    const base64 = buffer.toString('base64');
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+    const result = await model.generateContent([
+      {
+        text: 'Extract ALL text from this PDF document image/pages exactly as it appears. Output raw text only, no markdown or formatting.',
+      },
+      { inlineData: { mimeType: 'application/pdf', data: base64 } },
+    ] as unknown as Parameters<typeof model.generateContent>[0]);
+    return result.response.text();
   }
 
   if (fileType === 'TEXT') {

@@ -79,15 +79,37 @@ export async function generateWithFallback(parts: GeminiPart[]): Promise<string>
 
 /**
  * Generates a 768-dimensional text embedding vector using Gemini's
- * `text-embedding-004` model. Used for RAG (Retrieval-Augmented Generation)
- * in the AI Notebook pipeline.
+ * `gemini-embedding-001` model (with fallback to `gemini-embedding-2`).
+ * Used for RAG (Retrieval-Augmented Generation) in the AI Notebook pipeline.
  *
  * @param text - The text content to embed (should be ~500 words / chunk).
  * @returns An array of 768 floats representing the semantic vector.
  */
 export async function generateEmbedding(text: string): Promise<number[]> {
-  const model = genAI.getGenerativeModel({ model: 'text-embedding-004' });
-  const result = await model.embedContent(text);
-  return result.embedding.values;
+  const EMBEDDING_MODELS = ['gemini-embedding-001', 'gemini-embedding-2'];
+  let lastErr: unknown;
+
+  for (const modelName of EMBEDDING_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await model.embedContent({
+        content: { role: 'user', parts: [{ text }] },
+        outputDimensionality: 768,
+      } as any);
+      if (result?.embedding?.values) {
+        return result.embedding.values;
+      }
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[Gemini] generateEmbedding error with ${modelName}:`, err);
+    }
+  }
+
+  throw new Error(
+    `[Gemini] Failed to generate embedding vector. Last error: ${
+      lastErr instanceof Error ? lastErr.message : String(lastErr)
+    }`
+  );
 }
 

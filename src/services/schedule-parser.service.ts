@@ -14,9 +14,7 @@
  *   { classSchedules, calendarEvents, examWeeks }
  */
 
-import { createRequire } from "module";
-const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse") as (buffer: Buffer) => Promise<{ text: string }>;
+import { PDFParse } from "pdf-parse";
 import mammoth from "mammoth";
 import { generateWithFallback, GeminiPart } from "@/utils/gemini";
 
@@ -159,8 +157,9 @@ Using the new document above, produce the FINAL merged schedule:
 // ── Text Extraction Helpers ────────────────────────────────────────────────────
 
 async function extractFromPdf(buffer: Buffer): Promise<string> {
-  const data = await pdfParse(buffer);
-  return data.text;
+  const parser = new PDFParse({ data: buffer });
+  const parsed = await parser.getText();
+  return parsed?.text ?? "";
 }
 
 async function extractFromDocx(buffer: Buffer): Promise<string> {
