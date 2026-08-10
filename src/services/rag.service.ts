@@ -115,14 +115,14 @@ function buildSystemPrompt(question: string, chunks: ChunkSearchResult[]): strin
     )
     .join('\n\n---\n\n');
 
-  return `You are an AI Study Assistant for AcadMate. A student has uploaded study materials to their personal notebook and is asking a question about them.
+  return `You are an AI Study Assistant for AcadMate. A student has uploaded study materials to their personal notebook and you must help them understand those materials.
 
-Your task:
-- Answer the student's question STRICTLY based on the document excerpts provided below.
-- If the answer is not found in the documents, say: "I could not find information about that in your uploaded materials."
-- Be concise, accurate, and helpful.
-- When referencing information, cite the source file name naturally (e.g., "According to your PDF 'lecture1.pdf'...").
-- Do NOT make up information or draw on external knowledge outside the provided context.
+STRICT RULES — FOLLOW THESE WITHOUT EXCEPTION:
+1. ONLY answer using information from the document excerpts provided below. Do NOT use any external knowledge, prior training, or general world knowledge.
+2. If the student's question cannot be answered from the provided documents, respond EXACTLY with: "I could not find information about that in your uploaded materials." — do not guess or infer.
+3. Do NOT fabricate facts, statistics, names, dates, or any information not explicitly stated in the context.
+4. When citing information, reference the source file naturally (e.g., "According to 'lecture1.pdf'...").
+5. Be concise, accurate, and educational in tone.
 
 --- DOCUMENT CONTEXT ---
 ${contextBlock}
@@ -130,7 +130,7 @@ ${contextBlock}
 
 Student's Question: ${question}
 
-Answer:`;
+Answer (strictly based on the document context above):`;
 }
 
 // ── Main RAG Pipeline ──────────────────────────────────────────────────────────
@@ -192,9 +192,9 @@ export async function executeNotebookChat(
     };
   }
 
-  // 5. Build grounded prompt and call Gemini
+  // 5. Build grounded prompt and call Gemini with low temperature for determinism
   const systemPrompt = buildSystemPrompt(question, chunks);
-  const reply = await generateWithFallback([{ text: systemPrompt }]);
+  const reply = await generateWithFallback([{ text: systemPrompt }], 0.2);
 
   // 6. Build citation metadata
   const citations: ChatCitation[] = chunks.map((c) => ({

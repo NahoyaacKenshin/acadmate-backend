@@ -33,14 +33,21 @@ export type GeminiPart =
  * Attempts to generate content using the best available model.
  * On a 429 (Resource Exhausted) error, it cascades to the next model in
  * the fallback chain. Throws if all models are exhausted or a non-429 error occurs.
+ *
+ * @param parts       - The content parts (text or inline data) to send to Gemini.
+ * @param temperature - Optional generation temperature. Defaults to 1.0 (default Gemini).
+ *                      Pass 0.2 for RAG chat to reduce hallucination risk.
  */
-export async function generateWithFallback(parts: GeminiPart[]): Promise<string> {
+export async function generateWithFallback(parts: GeminiPart[], temperature = 1.0): Promise<string> {
   let lastError: unknown;
 
   for (const modelName of MODEL_CASCADE) {
     try {
-      console.log(`[Gemini] Attempting with model: ${modelName}`);
-      const model = genAI.getGenerativeModel({ model: modelName });
+      console.log(`[Gemini] Attempting with model: ${modelName} (temperature: ${temperature})`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { temperature },
+      });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await model.generateContent(parts as any);
       const text = result.response.text();

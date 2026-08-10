@@ -21,15 +21,15 @@ enum TokenType {
 
 // Models
 model User {
-  id               String    @id @default(uuid())
-  email            String?   @unique
+  id               String        @id @default(uuid())
+  email            String?       @unique
   password         String?
   name             String?
-  emailVerified    DateTime? @map("email_verified") // @map is custom table name
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  emailVerified    DateTime?     @map("email_verified") // @map is custom table name
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
-  role             Role      @default(USER)
+  role             Role          @default(USER)
   tokens           Token[]
   subjects         Subject[]
   tasks            Task[]
@@ -38,6 +38,7 @@ model User {
   examWeeks        ExamWeek[]
   notebooks        Notebook[]
   sources          Source[]
+  chatSessions     ChatSession[]
 }
 
 model Token {
@@ -222,15 +223,16 @@ enum SourceStatus {
 
 /// A user-created notebook that groups uploaded study materials.
 model Notebook {
-  id          String   @id @default(uuid())
+  id          String        @id @default(uuid())
   title       String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  userId  String
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sources Source[]
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sources      Source[]
+  chatSessions ChatSession[]
 
   @@index([userId])
 }
@@ -274,5 +276,44 @@ model SourceChunk {
 
   @@index([sourceId])
   @@index([notebookId])
+}
+
+// ── Week 7: AI Chat & Conversation History ────────────────────────────────────
+
+enum ChatRole {
+  USER
+  ASSISTANT
+}
+
+/// A persisted AI chat session scoped to a specific notebook.
+/// Each session groups a sequence of user/assistant message exchanges.
+model ChatSession {
+  id         String               @id @default(uuid())
+  title      String?              // Derived from the first user message (truncated)
+  createdAt  DateTime             @default(now())
+  updatedAt  DateTime             @updatedAt
+
+  notebookId String
+  notebook   Notebook             @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages   ChatMessageHistory[]
+
+  @@index([notebookId])
+  @@index([userId])
+}
+
+/// A single message (user question or AI reply) within a ChatSession.
+model ChatMessageHistory {
+  id        String     @id @default(uuid())
+  role      ChatRole   // USER or ASSISTANT
+  content   String     // Message text
+  citations Json?      // Serialized ChatCitation[] — null for user messages
+  createdAt DateTime   @default(now())
+
+  sessionId String
+  session   ChatSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
 }
 

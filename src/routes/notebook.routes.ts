@@ -3,14 +3,20 @@
  *
  * All routes require a valid JWT (AuthMiddleware).
  *
- * GET    /api/notebooks                                    — list all user notebooks
- * POST   /api/notebooks                                    — create a notebook
- * GET    /api/notebooks/:id                                — get notebook + sources
- * DELETE /api/notebooks/:id                                — delete notebook
- * POST   /api/notebooks/:notebookId/sources                — upload a source file (multer)
- * DELETE /api/notebooks/:notebookId/sources/:sourceId      — delete a source
- * POST   /api/notebooks/:notebookId/chat                   — RAG chat (Week 6)
- * GET    /api/notebooks/:notebookId/chat/history           — chat history stub (Week 7)
+ * GET    /api/notebooks                                         — list all user notebooks
+ * POST   /api/notebooks                                         — create a notebook
+ * GET    /api/notebooks/:id                                     — get notebook + sources
+ * DELETE /api/notebooks/:id                                     — delete notebook
+ * POST   /api/notebooks/:notebookId/sources                     — upload a source file (multer)
+ * DELETE /api/notebooks/:notebookId/sources/:sourceId           — delete a source
+ *
+ * ── AI Chat (Week 6) ──────────────────────────────────────────────────────────
+ * POST   /api/notebooks/:notebookId/chat                        — RAG chat; persists session + messages
+ *
+ * ── Conversation History (Week 7) ─────────────────────────────────────────────
+ * GET    /api/notebooks/:notebookId/chat/history                — list all chat sessions
+ * GET    /api/notebooks/:notebookId/chat/history/:sessionId     — get session messages
+ * DELETE /api/notebooks/:notebookId/chat/history/:sessionId     — delete a session
  */
 
 import { Router } from 'express';
@@ -30,7 +36,7 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
-// ── Notebook CRUD ─────────────────────────────────────────────────────────────
+// ── Notebook CRUD ──────────────────────────────────────────────────────────────
 
 router.get(
   '/',
@@ -56,7 +62,7 @@ router.delete(
   controller.deleteNotebook
 );
 
-// ── Source File Upload & Delete ───────────────────────────────────────────────
+// ── Source File Upload & Delete ────────────────────────────────────────────────
 
 router.post(
   '/:notebookId/sources',
@@ -72,17 +78,34 @@ router.delete(
 );
 
 // ── RAG Chat (Week 6) ─────────────────────────────────────────────────────────
+// NOTE: History sub-routes must be registered BEFORE the bare chat route to
+// avoid Express matching /:notebookId/chat/history as a chat message body.
 
-router.post(
-  '/:notebookId/chat',
-  auth.execute,
-  chatController.chat
-);
+// ── Conversation History (Week 7) ─────────────────────────────────────────────
 
 router.get(
   '/:notebookId/chat/history',
   auth.execute,
-  chatController.history
+  chatController.listHistory
+);
+
+router.get(
+  '/:notebookId/chat/history/:sessionId',
+  auth.execute,
+  chatController.getSession
+);
+
+router.delete(
+  '/:notebookId/chat/history/:sessionId',
+  auth.execute,
+  chatController.deleteSession
+);
+
+// POST chat must come AFTER the history GET routes
+router.post(
+  '/:notebookId/chat',
+  auth.execute,
+  chatController.chat
 );
 
 export default router;
