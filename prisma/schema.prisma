@@ -26,6 +26,7 @@ model User {
   password         String?
   name             String?
   emailVerified    DateTime?     @map("email_verified") // @map is custom table name
+  programName      String?       @map("program_name")  // Set by student during onboarding
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
 

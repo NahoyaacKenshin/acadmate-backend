@@ -26,4 +26,12 @@ export class UserRepository {
       select: { id: true, email: true, emailVerified: true },
     });
   }
+
+  async updatePassword(userId: string, hashedPassword: string) {
+    return prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+      select: { id: true, email: true },
+    });
+  }
 }

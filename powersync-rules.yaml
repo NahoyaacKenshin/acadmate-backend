@@ -30,28 +30,18 @@ streams:
       FROM "CalendarEvent" 
       WHERE "userId" = auth.user_id()
 
-  # Global admin-managed tables — synced to ALL authenticated users (no user_id filter)
-  global_exam_weeks:
+  user_exam_weeks:
     auto_subscribe: true
     query: >
       SELECT id, title, "startDate", "endDate", "createdAt", "updatedAt", "userId" 
       FROM "ExamWeek"
+      WHERE "userId" = auth.user_id()
 
-  global_semester_rules:
-    auto_subscribe: true
-    query: >
-      SELECT id, "startDate", "endDate", "dayOfWeek", "setType", label, "createdAt", "updatedAt"
-      FROM "SemesterRule"
-
-  global_program_mappings:
-    auto_subscribe: true
-    query: >
-      SELECT id, "programName", "studentSet", "createdAt", "updatedAt"
-      FROM "ProgramMapping"
-
+  # Global public reference data — synced to ALL authenticated students
   global_holidays:
     auto_subscribe: true
     query: >
       SELECT id, date, name, type
       FROM "PhilippineHoliday"
+
 

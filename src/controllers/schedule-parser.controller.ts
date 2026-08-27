@@ -16,8 +16,6 @@ import { Request, Response } from "express";
 import multer from "multer";
 import {
   parseScheduleFromFile,
-  parseAdminFeatureFromFile,
-  AdminFeatureType,
   SupportedMimeType,
 } from "@/services/schedule-parser.service";
 
@@ -72,8 +70,6 @@ export class ScheduleParserController {
           ? req.body.studentSet
           : undefined;
 
-      const isStudentScan = (req as any).user?.role !== "ADMIN";
-
       const files = req.files as Express.Multer.File[] | undefined;
       const file = files && files.length > 0 ? files[0] : undefined;
 
@@ -88,7 +84,7 @@ export class ScheduleParserController {
         return;
       }
 
-      const result = await parseScheduleFromFile(buffer, mimeType, currentSchedule, studentSet, isStudentScan);
+      const result = await parseScheduleFromFile(buffer, mimeType, currentSchedule, studentSet);
 
       res.status(200).json({
         status: "success",
@@ -121,46 +117,5 @@ export class ScheduleParserController {
       res.status(500).json({ status: "error", message });
     }
   };
-
-  /**
-   * POST /api/schedule-parser/parse-admin
-   *
-   * Feature-scoped AI scanner for admin features: set-ab, program-mapping, exam-week, special-holidays, suspension.
-   */
-  parseAdmin = async (req: Request, res: Response): Promise<void> => {
-    try {
-      const feature = req.body?.feature as AdminFeatureType;
-      const validFeatures: AdminFeatureType[] = ["set-ab", "program-mapping", "exam-week", "special-holidays", "suspension"];
-
-      if (!feature || !validFeatures.includes(feature)) {
-        res.status(400).json({
-          status: "error",
-          message: `Invalid or missing feature scope. Must be one of: ${validFeatures.join(", ")}`,
-        });
-        return;
-      }
-
-      const files = req.files as Express.Multer.File[] | undefined;
-      const file = files && files.length > 0 ? files[0] : undefined;
-
-      if (!file) {
-        res.status(400).json({
-          status: "error",
-          message: 'No file provided. Please send a file via the "file" field.',
-        });
-        return;
-      }
-
-      const result = await parseAdminFeatureFromFile(file.buffer, file.mimetype as SupportedMimeType, feature);
-
-      res.status(200).json({
-        status: "success",
-        data: result,
-      });
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An unexpected error occurred";
-      console.error("[ScheduleParserController:parseAdmin] Error:", err);
-      res.status(500).json({ status: "error", message });
-    }
-  };
 }
+

@@ -10,6 +10,7 @@ export const GetMeService = async (userId: string) => {
         email: true,
         role: true,
         emailVerified: true,
+        programName: true,
       }
     });
 

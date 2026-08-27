@@ -20,7 +20,7 @@ export const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY ?? "");
 // ── Model Cascade ─────────────────────────────────────────────────────────────
 
 const MODEL_CASCADE = [
-  "gemini-pro-latest",
+  "gemini-3.6-flash",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",
 ] as const;
@@ -31,8 +31,8 @@ export type GeminiPart =
 
 /**
  * Attempts to generate content using the best available model.
- * On a 429 (Resource Exhausted) error, it cascades to the next model in
- * the fallback chain. Throws if all models are exhausted or a non-429 error occurs.
+ * On a 429 (Resource Exhausted), 404 (Model Not Found / Migrated), or 5xx error,
+ * it cascades to the next model in the fallback chain.
  *
  * @param parts       - The content parts (text or inline data) to send to Gemini.
  * @param temperature - Optional generation temperature. Defaults to 1.0 (default Gemini).
@@ -56,22 +56,25 @@ export async function generateWithFallback(parts: GeminiPart[], temperature = 1.
     } catch (err: unknown) {
       lastError = err;
       const message = err instanceof Error ? err.message : String(err);
-      const isTransientError =
+      const isRecoverableError =
         message.includes("429") ||
+        message.includes("404") ||
         message.includes("503") ||
         message.includes("500") ||
+        message.toLowerCase().includes("not found") ||
+        message.toLowerCase().includes("no longer available") ||
         message.toLowerCase().includes("resource exhausted") ||
         message.toLowerCase().includes("quota") ||
         message.toLowerCase().includes("service unavailable");
 
-      if (isTransientError) {
+      if (isRecoverableError) {
         console.warn(
-          `[Gemini] Transient error or rate limit hit on ${modelName}. Cascading to next model...`
+          `[Gemini] Error on ${modelName} (${message.slice(0, 120)}...). Cascading to next model...`
         );
         continue;
       }
 
-      // Non-rate-limit error — rethrow immediately
+      // Non-recoverable error — rethrow immediately
       throw err;
     }
   }

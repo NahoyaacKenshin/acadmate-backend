@@ -1,5 +1,14 @@
 import { Request, Response } from "express";
-import { SignupUserService, LoginCredentialsService, VerifyEmailService, RefreshTokenService, ResendEmailVerificationService, GetMeService } from "@/services/auth";
+import { 
+  SignupUserService, 
+  LoginCredentialsService, 
+  VerifyEmailService, 
+  RefreshTokenService, 
+  ResendEmailVerificationService, 
+  GetMeService,
+  ForgotPasswordService,
+  ResetPasswordService,
+} from "@/services/auth";
 import { TokenExpiry, toMilliseconds } from "@/lib/jwt";
 import { ENV } from "@/config/env";
 import { TokenRepository } from "@/repositories/token.repository";
@@ -92,12 +101,52 @@ export class AuthController {
     return res.status(result.code).json(result);
   };
 
+  // Forgot Password Request
+  public forgotPassword = async (req: Request, res: Response) => {
+    const { email } = req.body ?? {};
+    const result = await ForgotPasswordService(email);
+    return res.status(result.code).json(result);
+  };
+
+  // Reset Password Execution
+  public resetPassword = async (req: Request, res: Response) => {
+    const { token, password } = req.body ?? {};
+    const result = await ResetPasswordService(token, password);
+    return res.status(result.code).json(result);
+  };
+
   // Get Current User Session
   public me = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
     const result = await GetMeService(userId);
     return res.status(result.code).json(result);
+  };
+
+  // Update Current User Profile (name, programName)
+  public updateMe = async (req: Request, res: Response) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const userId = (req as any).user?.sub;
+    if (!userId) {
+      return res.status(401).json({ code: 401, status: "error", message: "Unauthorized" });
+    }
+
+    const { name, programName } = req.body ?? {};
+
+    try {
+      const updated = await (await import("@/lib/prisma")).prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(name !== undefined ? { name: String(name).trim() } : {}),
+          ...(programName !== undefined ? { programName: programName ? String(programName).trim() : null } : {}),
+        },
+        select: { id: true, name: true, email: true, role: true, emailVerified: true, programName: true },
+      });
+      return res.status(200).json({ code: 200, status: "success", data: { user: updated } });
+    } catch (error) {
+      console.error("updateMe Error", error);
+      return res.status(500).json({ code: 500, status: "error", message: "Failed to update profile" });
+    }
   };
 
   // Get PowerSync JWT Token

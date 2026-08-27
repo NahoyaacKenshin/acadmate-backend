@@ -24,16 +24,4 @@ router.post(
   controller.parse
 );
 
-/**
-  * POST /api/schedule-parser/parse-admin
-  *
-  * Feature-scoped AI scanner for admin features (set-ab, program-mapping, exam-week, special-holidays, suspension).
-  */
-router.post(
-  "/parse-admin",
-  auth.execute,
-  uploadMiddleware,
-  controller.parseAdmin
-);
-
 export default router;
