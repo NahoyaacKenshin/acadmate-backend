@@ -37,11 +37,19 @@ streams:
       FROM "ExamWeek"
       WHERE "userId" = auth.user_id()
 
+  user_semester_rules:
+    auto_subscribe: true
+    query: >
+      SELECT id, "startDate", "endDate", "dayOfWeek", "setType", label, "createdAt", "updatedAt", "userId"
+      FROM "SemesterRule"
+      WHERE "userId" = auth.user_id()
+
   # Global public reference data — synced to ALL authenticated students
   global_holidays:
     auto_subscribe: true
     query: >
       SELECT id, date, name, type
       FROM "PhilippineHoliday"
+
 
 

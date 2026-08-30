@@ -37,6 +37,7 @@ model User {
   classSchedules   ClassSchedule[]
   calendarEvents   CalendarEvent[]
   examWeeks        ExamWeek[]
+  semesterRules    SemesterRule[]
   notebooks        Notebook[]
   sources          Source[]
   chatSessions     ChatSession[]
@@ -182,8 +183,8 @@ enum StudentSet {
   B
 }
 
-/// Global admin-defined rules for a semester (e.g. which days are Set A / Set B).
-/// Synced read-only to all student clients via PowerSync.
+/// Student-defined custom modality override rules for alternating days.
+/// Synced locally to the student's phone via PowerSync.
 model SemesterRule {
   id        String     @id @default(uuid())
   startDate DateTime   // The start date this rule applies from
@@ -194,17 +195,11 @@ model SemesterRule {
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
-  @@index([startDate])
-}
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-/// Global admin-defined mapping from degree program name to Set A or Set B.
-/// Synced read-only to all student clients via PowerSync.
-model ProgramMapping {
-  id          String     @id @default(uuid())
-  programName String     @unique // e.g. "BSIT", "BEED", "BSHM"
-  studentSet  StudentSet // A or B
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  @@index([userId])
+  @@index([startDate])
 }
 
 // ── Week 5: AI Notebook & RAG Pipeline ────────────────────────────────────────

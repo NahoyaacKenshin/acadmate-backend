@@ -11,6 +11,7 @@ const ALLOWED_TABLES: Record<string, keyof typeof prisma> = {
   ClassSchedule: "classSchedule",
   CalendarEvent: "calendarEvent",
   ExamWeek: "examWeek",
+  SemesterRule: "semesterRule",
 };
 
 export class SyncController {
@@ -23,11 +24,31 @@ export class SyncController {
     // Remove the id field from data — it's provided as a separate arg
     delete sanitized.id;
 
-    // Helper to ensure date strings are full ISO-8601 format for Prisma
-    const ensureIsoDate = (val: unknown) => {
-      if (typeof val === "string" && val.length > 0) {
-        const d = new Date(val);
-        if (!isNaN(d.getTime())) return d.toISOString();
+    // Helper to ensure date strings are strict 2-digit padded ISO-8601 format for Prisma & Postgres
+    const ensureIsoDate = (val: unknown): unknown => {
+      if (typeof val === "string" && val.trim().length > 0) {
+        const trimmed = val.trim();
+
+        // Match YYYY-M-D or YYYY-MM-DD (e.g. 2026-7-11 or 2026-7-11T00:00:00.000Z)
+        const ymdMatch = trimmed.match(
+          /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2})(?:\.(\d+))?)?(?:Z|([+-]\d{2}:?\d{2}))?)?/
+        );
+        if (ymdMatch) {
+          const [, y, m, d, hh = "00", mm = "00", ss = "00", ms = "000"] = ymdMatch;
+          const padMonth = m.padStart(2, "0");
+          const padDay = d.padStart(2, "0");
+          const padHour = hh.padStart(2, "0");
+          const padMin = mm.padStart(2, "0");
+          const padSec = ss.padStart(2, "0");
+          const padMs = ms.slice(0, 3).padEnd(3, "0");
+          return `${y}-${padMonth}-${padDay}T${padHour}:${padMin}:${padSec}.${padMs}Z`;
+        }
+
+        // Fallback for other standard formats
+        const parsed = new Date(trimmed);
+        if (!isNaN(parsed.getTime())) {
+          return parsed.toISOString();
+        }
       }
       return val;
     };
@@ -38,6 +59,8 @@ export class SyncController {
         sanitized.completed = c === 1 || c === '1' || c === true || c === 'true';
       }
       if ("dueDate" in sanitized) sanitized.dueDate = ensureIsoDate(sanitized.dueDate);
+      if ("createdAt" in sanitized) sanitized.createdAt = ensureIsoDate(sanitized.createdAt);
+      if ("updatedAt" in sanitized) sanitized.updatedAt = ensureIsoDate(sanitized.updatedAt);
     }
     if (table === "CalendarEvent") {
       if ("allDay" in sanitized) {
@@ -46,14 +69,26 @@ export class SyncController {
       }
       if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
       if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
+      if ("createdAt" in sanitized) sanitized.createdAt = ensureIsoDate(sanitized.createdAt);
+      if ("updatedAt" in sanitized) sanitized.updatedAt = ensureIsoDate(sanitized.updatedAt);
     }
     if (table === "ClassSchedule") {
       if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
       if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
+      if ("createdAt" in sanitized) sanitized.createdAt = ensureIsoDate(sanitized.createdAt);
+      if ("updatedAt" in sanitized) sanitized.updatedAt = ensureIsoDate(sanitized.updatedAt);
     }
     if (table === "ExamWeek") {
       if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
       if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
+      if ("createdAt" in sanitized) sanitized.createdAt = ensureIsoDate(sanitized.createdAt);
+      if ("updatedAt" in sanitized) sanitized.updatedAt = ensureIsoDate(sanitized.updatedAt);
+    }
+    if (table === "SemesterRule") {
+      if ("startDate" in sanitized) sanitized.startDate = ensureIsoDate(sanitized.startDate);
+      if ("endDate" in sanitized) sanitized.endDate = ensureIsoDate(sanitized.endDate);
+      if ("createdAt" in sanitized) sanitized.createdAt = ensureIsoDate(sanitized.createdAt);
+      if ("updatedAt" in sanitized) sanitized.updatedAt = ensureIsoDate(sanitized.updatedAt);
     }
 
     return sanitized;

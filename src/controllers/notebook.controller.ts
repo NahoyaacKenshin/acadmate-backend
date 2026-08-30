@@ -16,7 +16,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '@/lib/prisma';
-import { uploadSourceFile, deleteSource } from '@/services/notebook.service';
+import { uploadSourceFile, deleteSource, retrySourceProcessing } from '@/services/notebook.service';
 import { JwtPayload } from '@/lib/jwt';
 
 type AuthRequest = Request & { user?: JwtPayload };
@@ -198,6 +198,27 @@ export class NotebookController {
       res.status(200).json({ status: 'success', message: 'Source deleted.' });
     } catch (err) {
       this.handleError(res, err, 'deleteSource');
+    }
+  };
+
+  /** POST /api/notebooks/:notebookId/sources/:sourceId/retry */
+  retrySourceHandler = async (req: Request, res: Response): Promise<void> => {
+    const userId   = (req as AuthRequest).user!.sub as string;
+    const sourceId = req.params.sourceId as string;
+
+    try {
+      const source = await retrySourceProcessing(sourceId, userId);
+      if (!source) {
+        res.status(404).json({ status: 'error', message: 'Source not found.' });
+        return;
+      }
+      res.status(200).json({
+        status: 'success',
+        message: 'Source re-processing initiated.',
+        data: source,
+      });
+    } catch (err) {
+      this.handleError(res, err, 'retrySourceHandler');
     }
   };
 

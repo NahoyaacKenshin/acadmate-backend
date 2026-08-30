@@ -77,6 +77,12 @@ router.delete(
   controller.deleteSourceHandler
 );
 
+router.post(
+  '/:notebookId/sources/:sourceId/retry',
+  auth.execute,
+  controller.retrySourceHandler
+);
+
 // ── RAG Chat (Week 6) ─────────────────────────────────────────────────────────
 // NOTE: History sub-routes must be registered BEFORE the bare chat route to
 // avoid Express matching /:notebookId/chat/history as a chat message body.

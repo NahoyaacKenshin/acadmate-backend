@@ -249,6 +249,54 @@ export async function uploadSourceFile(
 }
 
 /**
+ * Re-processes a failed Source using the existing file in Supabase Storage.
+ */
+export async function retrySourceProcessing(sourceId: string, userId: string) {
+  const source = await prisma.source.findFirst({
+    where: { id: sourceId, userId },
+  });
+  if (!source) return null;
+
+  // 1. Download buffer from Supabase Storage
+  const { data, error } = await supabase.storage.from(BUCKET!).download(source.storagePath);
+  if (error || !data) {
+    throw new Error(`Failed to download file from storage: ${error?.message || 'File not found'}`);
+  }
+
+  const arrayBuffer = await data.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  // 2. Set status to PROCESSING & clear error
+  await prisma.source.update({
+    where: { id: sourceId },
+    data: {
+      status: SourceStatus.PROCESSING,
+      errorMsg: null,
+      updatedAt: new Date(),
+    },
+  });
+
+  // 3. Clear any existing partial chunks
+  await prisma.sourceChunk.deleteMany({
+    where: { sourceId },
+  });
+
+  // 4. Trigger async background processing
+  const ext = source.fileName.split('.').pop()?.toLowerCase() ?? '';
+  let mimeType = 'application/octet-stream';
+  if (source.fileType === 'PDF') mimeType = 'application/pdf';
+  else if (source.fileType === 'IMAGE') mimeType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
+  else if (ext === 'docx') mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  else if (ext === 'txt') mimeType = 'text/plain';
+
+  processSource(source.id, buffer, mimeType).catch((err) => {
+    console.error('[NotebookService] Background retry processSource uncaught error:', err);
+  });
+
+  return source;
+}
+
+/**
  * Deletes a Source record and removes the file from Supabase Storage.
  */
 export async function deleteSource(sourceId: string, userId: string) {
@@ -264,3 +312,4 @@ export async function deleteSource(sourceId: string, userId: string) {
   await prisma.source.delete({ where: { id: sourceId } });
   return true;
 }
+

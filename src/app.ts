@@ -1,6 +1,7 @@
-import express, { Request, Response, /*NextFunction*/ } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import rateLimit from 'express-rate-limit';
 import { ENV } from '@/config/env';
 import routes from '@/routes';
 
@@ -28,6 +29,29 @@ app.use(cors({
   credentials: true
 }));
 
+// --- Rate Limiting ---
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 300, // Limit each IP to 300 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'error', message: 'Too many requests, please try again later.' }
+});
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 30, // Limit sensitive auth attempts per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { status: 'error', message: 'Too many authentication attempts. Please try again after 15 minutes.' }
+});
+
+app.use(globalLimiter);
+app.use('/api/auth/v1/login', authLimiter);
+app.use('/api/auth/v1/signup', authLimiter);
+app.use('/api/auth/v1/forgot-password', authLimiter);
+app.use('/api/auth/v1/reset-password', authLimiter);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -53,8 +77,8 @@ app.use((req: Request, res: Response) => {
 });
 
 // --- Global Error Handler ---
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-app.use((err: any, req: Request, res: Response, /*_next: NextFunction*/) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars
+app.use((err: any, req: Request, res: Response, _next: NextFunction) => {
   console.error('🔥 Global Error Hook:', err.message);
   
   const statusCode = err.status || 500;
