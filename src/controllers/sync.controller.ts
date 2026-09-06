@@ -29,19 +29,31 @@ export class SyncController {
       if (typeof val === "string" && val.trim().length > 0) {
         const trimmed = val.trim();
 
-        // Match YYYY-M-D or YYYY-MM-DD (e.g. 2026-7-11 or 2026-7-11T00:00:00.000Z)
+        // Match YYYY-M-D or YYYY-MM-DD with optional time and timezone offset
         const ymdMatch = trimmed.match(
-          /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2})(?:\.(\d+))?)?(?:Z|([+-]\d{2}:?\d{2}))?)?/
+          /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[T\s](\d{1,2}):(\d{1,2})(?::(\d{1,2})(?:\.(\d+))?)?(Z|[+-]\d{2}(?::?\d{2})?)?)?/
         );
         if (ymdMatch) {
-          const [, y, m, d, hh = "00", mm = "00", ss = "00", ms = "000"] = ymdMatch;
+          const [, y, m, d, hh = "00", mm = "00", ss = "00", ms = "000", tz] = ymdMatch;
           const padMonth = m.padStart(2, "0");
           const padDay = d.padStart(2, "0");
           const padHour = hh.padStart(2, "0");
           const padMin = mm.padStart(2, "0");
           const padSec = ss.padStart(2, "0");
           const padMs = ms.slice(0, 3).padEnd(3, "0");
-          return `${y}-${padMonth}-${padDay}T${padHour}:${padMin}:${padSec}.${padMs}Z`;
+
+          let finalTz = "+08:00"; // Default to Philippine Standard Time
+          if (tz) {
+            if (tz === "Z") {
+              finalTz = "Z";
+            } else if (tz.includes(":")) {
+              finalTz = tz;
+            } else {
+              finalTz = `${tz.slice(0, 3)}:${tz.slice(3)}`;
+            }
+          }
+
+          return `${y}-${padMonth}-${padDay}T${padHour}:${padMin}:${padSec}.${padMs}${finalTz}`;
         }
 
         // Fallback for other standard formats
