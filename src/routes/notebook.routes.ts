@@ -22,6 +22,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import { AuthMiddleware } from '@/middlewares/auth-middleware';
+import { aiLimiter } from '@/middlewares/rate-limiter';
 import { NotebookController } from '@/controllers/notebook.controller';
 import { NotebookChatController } from '@/controllers/notebook-chat.controller';
 
@@ -60,6 +61,12 @@ router.delete(
   '/:id',
   auth.execute,
   controller.deleteNotebook
+);
+
+router.patch(
+  '/:id',
+  auth.execute,
+  controller.updateNotebook
 );
 
 // ── Source File Upload & Delete ────────────────────────────────────────────────
@@ -111,6 +118,7 @@ router.delete(
 router.post(
   '/:notebookId/chat',
   auth.execute,
+  aiLimiter,
   chatController.chat
 );
 

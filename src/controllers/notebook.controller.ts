@@ -124,6 +124,39 @@ export class NotebookController {
     }
   };
 
+  /** PATCH /api/notebooks/:id */
+  updateNotebook = async (req: Request, res: Response): Promise<void> => {
+    const userId = (req as AuthRequest).user!.sub as string;
+    const id = req.params.id as string;
+    const { title, description } = req.body;
+
+    if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
+      res.status(400).json({ status: 'error', message: 'Title cannot be empty.' });
+      return;
+    }
+
+    try {
+      const existing = await prisma.notebook.findFirst({ where: { id, userId } });
+      if (!existing) {
+        res.status(404).json({ status: 'error', message: 'Notebook not found.' });
+        return;
+      }
+
+      const updated = await prisma.notebook.update({
+        where: { id },
+        data: {
+          ...(title !== undefined ? { title: title.trim() } : {}),
+          ...(description !== undefined ? { description: description?.trim() || null } : {}),
+          updatedAt: new Date(),
+        },
+      });
+
+      res.status(200).json({ status: 'success', data: updated });
+    } catch (err) {
+      this.handleError(res, err, 'updateNotebook');
+    }
+  };
+
   // ── Sources ────────────────────────────────────────────────────────────────
 
   /**

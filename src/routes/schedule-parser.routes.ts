@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { AuthMiddleware } from "@/middlewares/auth-middleware";
+import { aiLimiter } from "@/middlewares/rate-limiter";
 import {
   ScheduleParserController,
   uploadMiddleware,
@@ -20,6 +21,7 @@ const controller = new ScheduleParserController();
 router.post(
   "/parse",
   auth.execute,
+  aiLimiter,
   uploadMiddleware,
   controller.parse
 );

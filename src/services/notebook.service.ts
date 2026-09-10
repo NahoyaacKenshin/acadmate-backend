@@ -313,3 +313,19 @@ export async function deleteSource(sourceId: string, userId: string) {
   return true;
 }
 
+/**
+ * Ensures an HNSW vector index exists on SourceChunk.embedding for sub-millisecond similarity lookups.
+ */
+export async function ensureVectorIndex(): Promise<void> {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS source_chunk_embedding_hnsw_idx 
+      ON "SourceChunk" USING hnsw (embedding vector_cosine_ops);
+    `);
+    console.log('✅ HNSW vector index on SourceChunk verified.');
+  } catch (err) {
+    console.warn('⚠️ Note: HNSW vector index check skipped or pending pgvector support:', (err as Error)?.message || err);
+  }
+}
+
+

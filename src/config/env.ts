@@ -28,3 +28,25 @@ export const ENV = {
     FROM: process.env.SMTP_FROM,
   }
 };
+
+export function validateEnv(): void {
+  if (ENV.NODE_ENV === 'production') {
+    const missing: string[] = [];
+
+    if (!process.env.JWT_SECRET || process.env.JWT_SECRET === 'fallback_secret_change_me') {
+      missing.push('JWT_SECRET (must not be empty or the default fallback string)');
+    }
+    if (!process.env.DATABASE_URL) {
+      missing.push('DATABASE_URL');
+    }
+    if (!process.env.GEMINI_API_KEY) {
+      missing.push('GEMINI_API_KEY');
+    }
+
+    if (missing.length > 0) {
+      throw new Error(
+        `❌ CRITICAL CONFIG ERROR: The following required environment variables are missing or insecure for production:\n  - ${missing.join('\n  - ')}`
+      );
+    }
+  }
+}
