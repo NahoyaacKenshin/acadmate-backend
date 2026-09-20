@@ -11,6 +11,8 @@ export const GetMeService = async (userId: string) => {
         role: true,
         emailVerified: true,
         programName: true,
+        studentSet: true,
+        hasCompletedOnboarding: true,
       }
     });
 

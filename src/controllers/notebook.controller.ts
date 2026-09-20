@@ -81,6 +81,7 @@ export class NotebookController {
               fileName: true,
               fileType: true,
               status: true,
+              rawText: true,
               errorMsg: true,
               createdAt: true,
               updatedAt: true,

@@ -20,6 +20,9 @@ export const ENV = {
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_STORAGE_BUCKET: process.env.SUPABASE_STORAGE_BUCKET || 'notebook-sources',
   
+  // Google OAuth
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+
   SMTP: {
     HOST: process.env.SMTP_HOST,
     PORT: parseInt(process.env.SMTP_PORT || '587', 10),

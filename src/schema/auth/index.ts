@@ -5,3 +5,4 @@ export { resendVerificationSchema } from "@/schema/auth/resend-verification.sche
 export { refreshTokenSchema } from "@/schema/auth/refresh-token.schema";
 export { forgotPasswordSchema } from "@/schema/auth/forgot-password.schema";
 export { resetPasswordSchema } from "@/schema/auth/reset-password.schema";
+export { googleAuthSchema } from "@/schema/auth/google-auth.schema";

@@ -6,3 +6,4 @@ export { ResendEmailVerificationService } from "@/services/auth/resend-email-ver
 export { GetMeService } from "@/services/auth/get-me-service";
 export { ForgotPasswordService } from "@/services/auth/forgot-password-service";
 export { ResetPasswordService } from "@/services/auth/reset-password-service";
+export { GoogleAuthService } from "@/services/auth/google-auth-service";

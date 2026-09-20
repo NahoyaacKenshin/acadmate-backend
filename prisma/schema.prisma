@@ -21,14 +21,18 @@ enum TokenType {
 
 // Models
 model User {
-  id               String        @id @default(uuid())
-  email            String?       @unique
-  password         String?
-  name             String?
-  emailVerified    DateTime?     @map("email_verified") // @map is custom table name
-  programName      String?       @map("program_name")  // Set by student during onboarding
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  id                      String        @id @default(uuid())
+  email                   String?       @unique
+  password                String?
+  name                    String?
+  avatarUrl               String?       @map("avatar_url")
+  googleId                String?       @unique @map("google_id")
+  emailVerified           DateTime?     @map("email_verified") // @map is custom table name
+  programName             String?       @map("program_name")           // Set by student during onboarding
+  studentSet              String?       @map("student_set")            // 'A', 'B', or 'Standard'
+  hasCompletedOnboarding  Boolean       @default(false) @map("has_completed_onboarding")
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
 
   role             Role          @default(USER)
   tokens           Token[]

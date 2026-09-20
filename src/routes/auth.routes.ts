@@ -9,6 +9,7 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  googleAuthSchema,
 } from "@/schema/auth";
 import { AuthMiddleware } from "@/middlewares/auth-middleware";
 
@@ -20,6 +21,7 @@ const authMiddleware = new AuthMiddleware();
 // Authentication Routes
 router.post("/v1/signup", validateSchema(signupSchema), authController.signup);
 router.post("/v1/login", validateSchema(loginSchema), authController.login);
+router.post("/v1/google", validateSchema(googleAuthSchema), authController.googleAuth);
 router.get("/v1/verify-email", validateSchema(verifyEmailSchema), authController.verifyEmail);
 router.post("/v1/resend-email-verification", validateSchema(resendVerificationSchema), authController.resendEmailVerification);
 router.post("/v1/forgot-password", validateSchema(forgotPasswordSchema), authController.forgotPassword);

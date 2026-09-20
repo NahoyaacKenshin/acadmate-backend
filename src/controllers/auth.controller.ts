@@ -8,6 +8,7 @@ import {
   GetMeService,
   ForgotPasswordService,
   ResetPasswordService,
+  GoogleAuthService,
 } from "@/services/auth";
 import { TokenExpiry, toMilliseconds } from "@/lib/jwt";
 import { ENV } from "@/config/env";
@@ -55,6 +56,18 @@ export class AuthController {
     const { email, password } = req.body ?? {};
     const result = await LoginCredentialsService(email, password);
     
+    if (result.code === 200 && result.data?.tokens) {
+      this.setAuthCookies(res, result.data.tokens);
+    }
+
+    return res.status(result.code).json(result);
+  };
+
+  // Google OAuth Sign-In / Sign-Up
+  public googleAuth = async (req: Request, res: Response) => {
+    const { idToken } = req.body ?? {};
+    const result = await GoogleAuthService(idToken);
+
     if (result.code === 200 && result.data?.tokens) {
       this.setAuthCookies(res, result.data.tokens);
     }
@@ -131,7 +144,7 @@ export class AuthController {
       return res.status(401).json({ code: 401, status: "error", message: "Unauthorized" });
     }
 
-    const { name, programName } = req.body ?? {};
+    const { name, programName, studentSet, hasCompletedOnboarding } = req.body ?? {};
 
     try {
       const updated = await (await import("@/lib/prisma")).prisma.user.update({
@@ -139,8 +152,10 @@ export class AuthController {
         data: {
           ...(name !== undefined ? { name: String(name).trim() } : {}),
           ...(programName !== undefined ? { programName: programName ? String(programName).trim() : null } : {}),
+          ...(studentSet !== undefined ? { studentSet: studentSet ? String(studentSet).trim() : null } : {}),
+          ...(hasCompletedOnboarding !== undefined ? { hasCompletedOnboarding: Boolean(hasCompletedOnboarding) } : {}),
         },
-        select: { id: true, name: true, email: true, role: true, emailVerified: true, programName: true },
+        select: { id: true, name: true, email: true, role: true, emailVerified: true, programName: true, studentSet: true, hasCompletedOnboarding: true },
       });
       return res.status(200).json({ code: 200, status: "success", data: { user: updated } });
     } catch (error) {
