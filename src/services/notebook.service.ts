@@ -17,7 +17,7 @@ import { PDFParse } from 'pdf-parse';
 import mammoth from 'mammoth';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
-import { generateEmbedding, genAI } from '@/utils/gemini';
+import { generateEmbedding, generateWithFallback } from '@/utils/gemini';
 import { ENV } from '@/config/env';
 import { SourceFileType, SourceStatus } from '@/generated/prisma';
 
@@ -49,14 +49,12 @@ async function extractText(
 
     // Fallback: Scanned/Image PDF OCR via Gemini Vision
     const base64 = buffer.toString('base64');
-    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-    const result = await model.generateContent([
+    return await generateWithFallback([
       {
         text: 'Extract ALL text from this PDF document image/pages exactly as it appears. Output raw text only, no markdown or formatting.',
       },
       { inlineData: { mimeType: 'application/pdf', data: base64 } },
-    ] as unknown as Parameters<typeof model.generateContent>[0]);
-    return result.response.text();
+    ]);
   }
 
   if (fileType === 'TEXT') {
@@ -72,14 +70,12 @@ async function extractText(
   if (fileType === 'IMAGE') {
     // Gemini Vision OCR — pass as inline base64
     const base64 = buffer.toString('base64');
-    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-    const result = await model.generateContent([
+    return await generateWithFallback([
       {
         text: 'Extract ALL text from this document image exactly as it appears. Output raw text only, no markdown or formatting.',
       },
       { inlineData: { mimeType, data: base64 } },
-    ] as unknown as Parameters<typeof model.generateContent>[0]);
-    return result.response.text();
+    ]);
   }
 
   throw new Error(`[NotebookService] Unsupported fileType: ${fileType}`);

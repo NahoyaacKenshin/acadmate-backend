@@ -3,8 +3,9 @@ import { z } from "zod";
 export const signupSchema = z.object({
   body: z.object({
     name: z
-      .string({ message: "Name is required" })
-      .min(2, "Name must be at least 2 characters"),
+      .string()
+      .min(2, "Name must be at least 2 characters")
+      .optional(),
     email: z
       .string({ message: "Email is required" })
       .email("Invalid email format"),

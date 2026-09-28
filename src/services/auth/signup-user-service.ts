@@ -5,7 +5,7 @@ import { hashPassword } from "@/utils/password";
 import { renderTemplate } from "@/utils/template";
 import { sendEmail } from "@/services/mail/mailer";
 
-export async function SignupUserService(name: string, email: string, password: string) {
+export async function SignupUserService(name: string | undefined, email: string, password: string) {
   const userRepository = new UserRepository();
   const tokenRepository = new TokenRepository();
 
@@ -21,7 +21,7 @@ export async function SignupUserService(name: string, email: string, password: s
     }
 
     // Insert User Account
-    const created = await userRepository.create({ name, email, password: hashPassword(password) });
+    const created = await userRepository.create({ name: name?.trim() || null, email, password: hashPassword(password) });
 
     // Insert Email Verification Token
     await tokenRepository.createEmailVerificationToken({ userId: created.id, token, expiresAt });

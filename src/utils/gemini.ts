@@ -21,6 +21,7 @@ export const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY ?? "");
 
 const MODEL_CASCADE = [
   "gemini-3.6-flash",
+  "gemini-3.5-flash",
   "gemini-flash-latest",
   "gemini-flash-lite-latest",
 ] as const;
@@ -71,6 +72,7 @@ export async function generateWithFallback(parts: GeminiPart[], temperature = 1.
         console.warn(
           `[Gemini] Error on ${modelName} (${message.slice(0, 120)}...). Cascading to next model...`
         );
+        await new Promise((resolve) => setTimeout(resolve, 500));
         continue;
       }
 

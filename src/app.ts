@@ -7,6 +7,9 @@ import routes from '@/routes';
 
 const app = express();
 
+// Trust reverse proxy (ngrok / load balancers) for accurate client IP in rate limiters
+app.set('trust proxy', 1);
+
 const corsOrigin: cors.CorsOptions['origin'] = (origin, callback) => {
   if (!origin || ENV.FRONTEND_URLS.includes(origin)) {
     callback(null, true);
