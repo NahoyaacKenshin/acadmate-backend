@@ -194,7 +194,19 @@ export async function executeNotebookChat(
 
   // 5. Build grounded prompt and call Gemini with low temperature for determinism
   const systemPrompt = buildSystemPrompt(question, chunks);
-  const reply = await generateWithFallback([{ text: systemPrompt }], 0.2);
+  let reply: string;
+
+  try {
+    reply = await generateWithFallback([{ text: systemPrompt }], 0.2);
+  } catch (genErr) {
+    console.warn('[RAGService] generateWithFallback cascade exhausted:', genErr);
+    return {
+      reply: "I am having temporary difficulty connecting to our AI models due to high demand. Please give me a brief moment and try asking your question again.",
+      citations: [],
+      notebookId,
+      retrievedChunks: chunks.length,
+    };
+  }
 
   // 6. Build citation metadata
   const citations: ChatCitation[] = chunks.map((c) => ({

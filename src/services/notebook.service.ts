@@ -310,6 +310,66 @@ export async function deleteSource(sourceId: string, userId: string) {
 }
 
 /**
+ * Updates a processed Source (e.g. rename or edit raw text content)
+ */
+export async function updateSource(
+  sourceId: string,
+  userId: string,
+  data: { fileName?: string; rawText?: string }
+) {
+  const source = await prisma.source.findFirst({
+    where: { id: sourceId, userId },
+  });
+  if (!source) return null;
+
+  const updateData: { fileName?: string; rawText?: string; updatedAt: Date } = {
+    updatedAt: new Date(),
+  };
+
+  if (data.fileName && data.fileName.trim()) {
+    updateData.fileName = data.fileName.trim();
+  }
+
+  if (typeof data.rawText === 'string') {
+    const normalized = normalizeText(data.rawText);
+    updateData.rawText = normalized.slice(0, 100_000);
+
+    // If text was updated, re-generate chunks & embeddings
+    const chunks = chunkText(normalized);
+    await prisma.sourceChunk.deleteMany({ where: { sourceId } });
+
+    for (let i = 0; i < chunks.length; i++) {
+      try {
+        const embedding = await generateEmbedding(chunks[i]);
+        const vectorLiteral = `[${embedding.join(',')}]`;
+
+        await prisma.$executeRaw`
+          INSERT INTO "SourceChunk" (id, "sourceId", "notebookId", "chunkIndex", content, embedding, "createdAt")
+          VALUES (
+            gen_random_uuid()::text,
+            ${sourceId},
+            ${source.notebookId},
+            ${i},
+            ${chunks[i]},
+            ${vectorLiteral}::vector,
+            NOW()
+          )
+        `;
+      } catch (embErr) {
+        console.warn(`[NotebookService] Embedding chunk ${i} failed:`, embErr);
+      }
+    }
+  }
+
+  const updated = await prisma.source.update({
+    where: { id: sourceId },
+    data: updateData,
+  });
+
+  return updated;
+}
+
+/**
  * Ensures an HNSW vector index exists on SourceChunk.embedding for sub-millisecond similarity lookups.
  */
 export async function ensureVectorIndex(): Promise<void> {

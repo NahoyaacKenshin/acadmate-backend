@@ -90,6 +90,12 @@ router.post(
   controller.retrySourceHandler
 );
 
+router.patch(
+  '/:notebookId/sources/:sourceId',
+  auth.execute,
+  controller.updateSourceHandler
+);
+
 // ── RAG Chat (Week 6) ─────────────────────────────────────────────────────────
 // NOTE: History sub-routes must be registered BEFORE the bare chat route to
 // avoid Express matching /:notebookId/chat/history as a chat message body.

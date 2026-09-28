@@ -16,7 +16,7 @@
 
 import { Request, Response } from 'express';
 import { prisma } from '@/lib/prisma';
-import { uploadSourceFile, deleteSource, retrySourceProcessing } from '@/services/notebook.service';
+import { uploadSourceFile, deleteSource, retrySourceProcessing, updateSource } from '@/services/notebook.service';
 import { JwtPayload } from '@/lib/jwt';
 
 type AuthRequest = Request & { user?: JwtPayload };
@@ -253,6 +253,28 @@ export class NotebookController {
       });
     } catch (err) {
       this.handleError(res, err, 'retrySourceHandler');
+    }
+  };
+
+  /** PATCH /api/notebooks/:notebookId/sources/:sourceId */
+  updateSourceHandler = async (req: Request, res: Response): Promise<void> => {
+    const userId   = (req as AuthRequest).user!.sub as string;
+    const sourceId = req.params.sourceId as string;
+    const { fileName, rawText } = req.body;
+
+    try {
+      const updated = await updateSource(sourceId, userId, { fileName, rawText });
+      if (!updated) {
+        res.status(404).json({ status: 'error', message: 'Source not found.' });
+        return;
+      }
+      res.status(200).json({
+        status: 'success',
+        message: 'Source updated successfully.',
+        data: updated,
+      });
+    } catch (err) {
+      this.handleError(res, err, 'updateSourceHandler');
     }
   };
 

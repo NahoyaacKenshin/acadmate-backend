@@ -20,10 +20,10 @@ export const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY ?? "");
 // ── Model Cascade ─────────────────────────────────────────────────────────────
 
 const MODEL_CASCADE = [
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-flash-latest",
-  "gemini-flash-lite-latest",
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
 ] as const;
 
 export type GeminiPart =
@@ -32,12 +32,11 @@ export type GeminiPart =
 
 /**
  * Attempts to generate content using the best available model.
- * On a 429 (Resource Exhausted), 404 (Model Not Found / Migrated), or 5xx error,
- * it cascades to the next model in the fallback chain.
+ * If any model encounters an error (rate limit, service outage, deprecation, or unexpected failure),
+ * it automatically cascades to the next model in the cascade list.
  *
  * @param parts       - The content parts (text or inline data) to send to Gemini.
- * @param temperature - Optional generation temperature. Defaults to 1.0 (default Gemini).
- *                      Pass 0.2 for RAG chat to reduce hallucination risk.
+ * @param temperature - Generation temperature (e.g. 0.2 for deterministic RAG answers).
  */
 export async function generateWithFallback(parts: GeminiPart[], temperature = 1.0): Promise<string> {
   let lastError: unknown;
@@ -52,38 +51,24 @@ export async function generateWithFallback(parts: GeminiPart[], temperature = 1.
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const result = await model.generateContent(parts as any);
       const text = result.response.text();
-      console.log(`[Gemini] Success with model: ${modelName}`);
-      return text;
+      if (text && text.trim().length > 0) {
+        console.log(`[Gemini] Success with model: ${modelName}`);
+        return text;
+      }
     } catch (err: unknown) {
       lastError = err;
       const message = err instanceof Error ? err.message : String(err);
-      const isRecoverableError =
-        message.includes("429") ||
-        message.includes("404") ||
-        message.includes("503") ||
-        message.includes("500") ||
-        message.toLowerCase().includes("not found") ||
-        message.toLowerCase().includes("no longer available") ||
-        message.toLowerCase().includes("resource exhausted") ||
-        message.toLowerCase().includes("quota") ||
-        message.toLowerCase().includes("service unavailable");
-
-      if (isRecoverableError) {
-        console.warn(
-          `[Gemini] Error on ${modelName} (${message.slice(0, 120)}...). Cascading to next model...`
-        );
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        continue;
-      }
-
-      // Non-recoverable error — rethrow immediately
-      throw err;
+      console.warn(
+        `[Gemini] Error on model ${modelName}: "${message.slice(0, 150)}". Cascading to next available AI model...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      continue;
     }
   }
 
-  // All models exhausted
+  // All models exhausted — throw descriptive error for caller fallback
   throw new Error(
-    `[Gemini] All models exhausted due to rate limits. Last error: ${
+    `[Gemini] All AI models in cascade exhausted. Last error: ${
       lastError instanceof Error ? lastError.message : String(lastError)
     }`
   );

@@ -83,6 +83,7 @@ model Task {
   description String?
   dueDate     DateTime?
   completed   Boolean  @default(false)
+  color       String?  @default("#6C8EFF")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
