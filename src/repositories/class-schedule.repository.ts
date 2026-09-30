@@ -3,8 +3,11 @@ import { Modality, SetType } from "@/generated/prisma";
 
 interface ClassScheduleData {
   dayOfWeek: number;
+  daysOfWeek?: string | null;
   startTime: string;
   endTime: string;
+  startDate?: Date;
+  endDate?: Date | null;
   room?: string | null;
   modality?: Modality;
   setType?: SetType | null;

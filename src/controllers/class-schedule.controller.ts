@@ -22,12 +22,15 @@ export class ClassScheduleController {
   public create = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
-    const { dayOfWeek, startTime, endTime, room, modality, setType, subjectId } = req.body;
+    const { dayOfWeek, daysOfWeek, startTime, endTime, room, modality, setType, subjectId, startDate, endDate } = req.body;
     try {
       const schedule = await this.classScheduleRepository.create(userId, {
         dayOfWeek,
+        daysOfWeek,
         startTime,
         endTime,
+        startDate,
+        endDate,
         room,
         modality,
         setType,
@@ -43,12 +46,15 @@ export class ClassScheduleController {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
     const id = req.params.id as string;
-    const { dayOfWeek, startTime, endTime, room, modality, setType, subjectId } = req.body;
+    const { dayOfWeek, daysOfWeek, startTime, endTime, room, modality, setType, subjectId, startDate, endDate } = req.body;
     try {
       const schedule = await this.classScheduleRepository.update(id, userId, {
         dayOfWeek,
+        daysOfWeek,
         startTime,
         endTime,
+        startDate,
+        endDate,
         room,
         modality,
         setType,

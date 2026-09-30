@@ -1,0 +1,1 @@
+ALTER TABLE "ClassSchedule" ADD COLUMN IF NOT EXISTS "daysOfWeek" TEXT;

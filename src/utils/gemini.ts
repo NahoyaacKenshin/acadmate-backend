@@ -3,9 +3,9 @@
  *
  * Provides a single initialized GoogleGenerativeAI client and a defensive
  * `generateWithFallback` function that automatically cascades through
- * the model chain on 429 (Resource Exhausted) errors:
+ * the model chain on 429 (quota exhausted) and 503 (service capacity) errors:
  *
- *   gemini-2.5-pro  →  gemini-2.5-flash  →  gemini-2.5-flash-lite
+ *   gemini-3.5-flash  →  gemini-3.6-flash  →  gemini-3.5-flash-lite  →  gemini-flash-lite-latest  →  gemini-3.1-flash-lite  →  gemini-3.8-flash  →  gemini-3.7-flash  →  gemini-3.1-pro-preview
  *
  * All models share the same single GEMINI_API_KEY.
  */
@@ -20,10 +20,14 @@ export const genAI = new GoogleGenerativeAI(ENV.GEMINI_API_KEY ?? "");
 // ── Model Cascade ─────────────────────────────────────────────────────────────
 
 const MODEL_CASCADE = [
-  "gemini-2.5-flash",
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-1.5-pro",
+  "gemini-3.5-flash",          // ⚡ Primary workhorse — verified active, fast, reliable
+  "gemini-3.6-flash",          // ⚡ High-throughput modern flash
+  "gemini-3.5-flash-lite",     // 🪶 Ultra-fast lightweight fallback
+  "gemini-flash-lite-latest",  // 🔄 Stable flash-lite alias
+  "gemini-3.1-flash-lite",     // 🔄 Verified available fallback
+  "gemini-3.8-flash",          // ⚡ Latest Gemini 3.8 (when not at peak capacity)
+  "gemini-3.7-flash",          // ⚡ Gemini 3.7 Flash (when not at peak capacity)
+  "gemini-3.1-pro-preview",    // 🥇 Flagship preview (when quota permits)
 ] as const;
 
 export type GeminiPart =

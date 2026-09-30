@@ -116,6 +116,7 @@ enum HolidayType {
 model ClassSchedule {
   id        String    @id @default(uuid())
   dayOfWeek Int       // 0 = Sunday, 1 = Monday, ... 6 = Saturday
+  daysOfWeek String?  // JSON string e.g. "[1,3]"
   startTime String    // "HH:MM" 24-hour format
   endTime   String    // "HH:MM" 24-hour format
   room      String?
