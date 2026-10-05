@@ -73,6 +73,15 @@ export class SyncController {
       if ("dueDate" in sanitized) sanitized.dueDate = ensureIsoDate(sanitized.dueDate);
       if ("createdAt" in sanitized) sanitized.createdAt = ensureIsoDate(sanitized.createdAt);
       if ("updatedAt" in sanitized) sanitized.updatedAt = ensureIsoDate(sanitized.updatedAt);
+      if ("subtasks" in sanitized) {
+        if (typeof sanitized.subtasks === "string") {
+          try {
+            sanitized.subtasks = JSON.parse(sanitized.subtasks);
+          } catch {
+            sanitized.subtasks = [];
+          }
+        }
+      }
     }
     if (table === "CalendarEvent") {
       if ("allDay" in sanitized) {

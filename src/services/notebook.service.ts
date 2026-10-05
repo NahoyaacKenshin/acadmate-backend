@@ -88,7 +88,7 @@ function normalizeText(raw: string): string {
     .replace(/\r\n/g, '\n')           // normalize line endings
     .replace(/[ \t]+/g, ' ')          // collapse horizontal whitespace
     .replace(/\n{3,}/g, '\n\n')       // collapse excessive blank lines
-    .replace(/[^\x20-\x7E\n]/g, ' ') // strip non-printable chars
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, ' ') // strip non-printable ASCII control characters safely
     .trim();
 }
 
@@ -150,8 +150,17 @@ async function processSource(sourceId: string, buffer: Buffer, mimeType: string)
     // 4. Normalize
     const normalized = normalizeText(rawText);
 
+    // Empty or unreadable text check
+    if (normalized.length < 20) {
+      throw new Error('Document contained no readable text or is empty. Please verify the file.');
+    }
+
     // 5. Chunk
     const chunks = chunkText(normalized);
+
+    if (chunks.length === 0) {
+      throw new Error('Document could not be processed into text chunks.');
+    }
 
     // 6. Embed each chunk and store via pgvector raw SQL
     for (let i = 0; i < chunks.length; i++) {
@@ -186,6 +195,11 @@ async function processSource(sourceId: string, buffer: Buffer, mimeType: string)
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[NotebookService] processSource ${sourceId} FAILED:`, message);
+
+    // Clean up any partially inserted chunks so no orphaned chunks linger
+    await prisma.sourceChunk.deleteMany({
+      where: { sourceId },
+    }).catch(() => { /* swallow */ });
 
     await prisma.source.update({
       where: { id: sourceId },

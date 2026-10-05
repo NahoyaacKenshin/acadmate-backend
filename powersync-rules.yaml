@@ -12,7 +12,7 @@ streams:
   user_tasks:
     auto_subscribe: true
     query: >
-      SELECT id, title, description, "dueDate", completed, "createdAt", "updatedAt", "userId", "subjectId" 
+      SELECT id, title, description, "dueDate", completed, color, subtasks, "createdAt", "updatedAt", "userId", "subjectId" 
       FROM "Task" 
       WHERE "userId" = auth.user_id()
 

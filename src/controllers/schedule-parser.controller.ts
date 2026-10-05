@@ -106,6 +106,29 @@ export class ScheduleParserController {
         return;
       }
       if (
+        message.includes("429") ||
+        message.toLowerCase().includes("quota") ||
+        message.toLowerCase().includes("rate limit")
+      ) {
+        res.status(429).json({
+          status: "error",
+          message: "AI rate limit reached. Please wait a moment and try again.",
+        });
+        return;
+      }
+      if (
+        message.toLowerCase().includes("timeout") ||
+        message.toLowerCase().includes("timed out") ||
+        message.toLowerCase().includes("deadline exceeded") ||
+        message.toLowerCase().includes("504")
+      ) {
+        res.status(504).json({
+          status: "error",
+          message: "AI processing timed out. Please try again with a clearer or smaller document.",
+        });
+        return;
+      }
+      if (
         message.includes("[Gemini]") ||
         message.includes("[ScheduleParser]")
       ) {
