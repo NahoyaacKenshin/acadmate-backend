@@ -16,7 +16,7 @@ export class TaskRepository {
     });
   }
 
-  async create(userId: string, data: { title: string; description?: string | null; dueDate?: string | Date | null; completed?: boolean; subjectId?: string | null }) {
+  async create(userId: string, data: { title: string; description?: string | null; dueDate?: string | Date | null; completed?: boolean; color?: string | null; subtasks?: any; subjectId?: string | null }) {
     return prisma.task.create({
       data: {
         ...data,
@@ -26,7 +26,7 @@ export class TaskRepository {
     });
   }
 
-  async update(id: string, userId: string, data: Partial<{ title: string; description: string | null; dueDate: string | Date | null; completed: boolean; subjectId: string | null }>) {
+  async update(id: string, userId: string, data: Partial<{ title: string; description: string | null; dueDate: string | Date | null; completed: boolean; color: string | null; subtasks: any; subjectId: string | null }>) {
     return prisma.task.update({
       where: { id, userId },
       data,

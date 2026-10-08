@@ -3,6 +3,7 @@ import { TaskController, taskUploadMiddleware } from "@/controllers/task.control
 import { validateSchema } from "@/middlewares/validate-schema";
 import { createTaskSchema, updateTaskSchema, taskIdSchema } from "@/schema/task";
 import { AuthMiddleware } from "@/middlewares/auth-middleware";
+import { aiLimiter } from "@/middlewares/rate-limiter";
 
 const router = Router();
 const taskController = new TaskController();
@@ -12,7 +13,7 @@ const authMiddleware = new AuthMiddleware();
 router.use(authMiddleware.execute);
 
 // AI Task Endpoints
-router.post("/scan", taskUploadMiddleware, taskController.scan);
+router.post("/scan", aiLimiter, taskUploadMiddleware, taskController.scan);
 router.post("/breakdown", taskController.breakdown);
 
 // Standard CRUD

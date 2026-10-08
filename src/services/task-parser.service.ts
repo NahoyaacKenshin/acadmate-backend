@@ -208,14 +208,21 @@ export async function breakdownTask(
   description?: string | null,
   dueDate?: string | null
 ): Promise<{ subtasks: SubtaskMilestone[] }> {
-  const prompt = `You are an expert academic productivity coach.
-A college student has the following task:
+  const prompt = `You are an expert universal productivity and task execution coach.
+The user has the following task (which can be academic, personal life, work/freelance, administrative, health/fitness, household, creative, coding/tech, or daily errands):
 Title: "${title}"
 ${description ? `Description: "${description}"` : ""}
 ${dueDate ? `Due Date: "${dueDate}"` : ""}
 
-Break this task down into 3 to 5 clear, concrete, sequential milestone subtasks that make it easy to start and finish without feeling overwhelmed.
-Keep each subtask title concise and action-oriented (starting with a verb like "Draft", "Research", "Review", "Calculate", "Format").
+Break this task down into 3 to 5 clear, concrete, sequential milestone subtasks that make it effortless to begin and finish without feeling overwhelmed.
+Adapt the tone and action verbs naturally to the domain of the task:
+- For daily life / errands / home: "Gather", "Buy", "Organize", "Schedule", "Clean"
+- For creative / professional / work: "Outline", "Draft", "Review", "Deliver", "Present"
+- For academic: "Research", "Synthesize", "Draft", "Solve", "Review"
+- For technical / software: "Set up", "Implement", "Test", "Deploy", "Debug"
+- For health / fitness / administrative: "Register", "Prepare", "Complete", "Submit"
+
+Keep each subtask concise, highly actionable, and under 10 words.
 
 Output format: Return ONLY a valid JSON object matching this exact shape:
 {

@@ -81,6 +81,9 @@ export class SyncController {
             sanitized.subtasks = [];
           }
         }
+        if (!Array.isArray(sanitized.subtasks)) {
+          sanitized.subtasks = [];
+        }
       }
     }
     if (table === "CalendarEvent") {
@@ -150,20 +153,36 @@ export class SyncController {
       const sanitized = this.sanitizeData(table, data ?? {});
 
       switch (action) {
-        case "PUT":
+        case "PUT": {
+          const authUserId = (req as any).user?.sub;
+          const createData = {
+            id,
+            ...(authUserId && !sanitized.userId ? { userId: authUserId } : {}),
+            ...sanitized,
+          };
           await delegate.upsert({
             where: { id },
             update: sanitized,
-            create: { id, ...sanitized }
+            create: createData,
           });
           break;
+        }
 
-        case "PATCH":
-          await delegate.update({
+        case "PATCH": {
+          const authUserId = (req as any).user?.sub;
+          const fallbackCreate = {
+            id,
+            ...(table === "Task" ? { title: sanitized.title || "Untitled Task", completed: false } : {}),
+            ...(authUserId && !sanitized.userId ? { userId: authUserId } : {}),
+            ...sanitized,
+          };
+          await delegate.upsert({
             where: { id },
-            data: sanitized
+            update: sanitized,
+            create: fallbackCreate,
           });
           break;
+        }
 
         case "POST":
           await delegate.create({ data: { id, ...sanitized } });
@@ -181,8 +200,8 @@ export class SyncController {
 
       return res.status(200).json({ code: 200, status: "success" });
     } catch (error: any) {
-      if (error.code === 'P2025') {
-        console.warn(`[Sync] ${action} on ${table} (${id}) ignored: Record not found (P2025)`);
+      if (error.code === 'P2025' && action === 'DELETE') {
+        console.warn(`[Sync] DELETE on ${table} (${id}) ignored: Record not found (P2025)`);
         return res.status(200).json({ code: 200, status: "success", message: "Ignored, record not found" });
       }
       console.error(`[Sync] ${action} on ${table} (${id}) failed:`, error);

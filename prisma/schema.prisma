@@ -45,6 +45,9 @@ model User {
   notebooks        Notebook[]
   sources          Source[]
   chatSessions     ChatSession[]
+  flashcardDecks   FlashcardDeck[]
+  quizzes          Quiz[]
+  quizAttempts     QuizAttempt[]
 }
 
 model Token {
@@ -236,6 +239,8 @@ model Notebook {
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   sources      Source[]
   chatSessions ChatSession[]
+  flashcardDecks FlashcardDeck[]
+  quizzes        Quiz[]
 
   @@index([userId])
 }
@@ -319,4 +324,87 @@ model ChatMessageHistory {
 
   @@index([sessionId])
 }
+
+// ── Week 8: Flashcards & Quizzes ──────────────────────────────────────────────
+
+model FlashcardDeck {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  notebookId  String
+  notebook    Notebook    @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards       Flashcard[]
+
+  @@index([notebookId])
+  @@index([userId])
+}
+
+model Flashcard {
+  id          String        @id @default(uuid())
+  front       String
+  back        String
+  isMastered  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  deckId      String
+  deck        FlashcardDeck @relation(fields: [deckId], references: [id], onDelete: Cascade)
+
+  @@index([deckId])
+}
+
+model Quiz {
+  id          String         @id @default(uuid())
+  title       String
+  description String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  notebookId  String
+  notebook    Notebook       @relation(fields: [notebookId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions   QuizQuestion[]
+  attempts    QuizAttempt[]
+
+  @@index([notebookId])
+  @@index([userId])
+}
+
+model QuizQuestion {
+  id            String   @id @default(uuid())
+  question      String
+  options       Json     // Array of option strings
+  correctAnswer Int      // Index 0..3
+  explanation   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  quizId        String
+  quiz          Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+}
+
+model QuizAttempt {
+  id        String   @id @default(uuid())
+  score     Int
+  total     Int
+  answers   Json?
+  createdAt DateTime @default(now())
+
+  quizId    String
+  quiz      Quiz     @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([quizId])
+  @@index([userId])
+}
+
 

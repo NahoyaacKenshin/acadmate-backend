@@ -32,7 +32,7 @@ export interface ParsedClassSchedule {
   endTime: string;   // "HH:MM" 24-hour (strictly 2-digit e.g. "17:30")
   subjectName: string;
   room?: string | null;
-  modality?: "F2F" | "ONLINE" | "HYBRID";
+  modality?: "F2F" | "ONLINE";
   setType?: "A" | "B" | "BOTH" | null;
   startDate?: string; // ISO-8601 strictly padded "YYYY-MM-DDTHH:mm:ss.sssZ"
   endDate?: string | null; // ISO-8601 strictly padded
@@ -93,6 +93,22 @@ const buildSystemPrompt = (studentSet?: "A" | "B"): string => {
 
   return `You are an intelligent academic schedule extractor for a Philippine university student planner app.
 
+CRITICAL DIFFERENTIATION — REGULAR CLASSES vs. EXAMINATION SCHEDULES:
+First, inspect the document's title, headers, or content to determine the primary document type:
+1. EXAMINATION SCHEDULE:
+   - Keywords: "EXAMINATION SCHEDULE", "SCHEDULE OF EXAMINATIONS", "MIDTERM EXAMINATION", "FINAL EXAMINATION", "PRELIMINARY EXAM", "SEMI-FINAL EXAMS", "PERIODICAL EXAMS", "DEPARTMENTAL EXAMS", "TERM ASSESSMENT".
+   - If the document is an EXAMINATION SCHEDULE:
+     * Regular semester classes DO NOT EXIST in this document.
+     * Set "classSchedules": [].
+     * Extract ALL course exam sessions into "examEvents" (or "examWeekBlockers" if it defines a whole multi-day exam period).
+     * UNDER NO CIRCUMSTANCES should exam time slots be placed in "classSchedules"! Doing so will cause them to be saved as weekly repeating semester classes.
+2. REGULAR CLASS SCHEDULE:
+   - Keywords: "Class Schedule", "Registration Form", "Certificate of Matriculation", "Study Load", "Enrollment Assessment Form".
+   - Weekly recurring lectures, recitations, and lab sessions repeating throughout the entire 4-5 month semester go into "classSchedules".
+3. MIXED DOCUMENTS:
+   - Regular weekly classes go to "classSchedules".
+   - Any session marked with "Exam", "Midterm", "Final", "Prelim", "Semi-Final", "Assessment", or scheduled for a specific exam date MUST go to "examEvents".
+
 STEP 1 — SEMESTER & TERM DURATION DETECTION:
 Inspect the document to detect the overall semester, term, or school year duration:
 1. Header / Title / Metadata: Look for terms like "1st Semester", "2nd Semester", "Summer / Midyear", "A.Y. 2026-2027", "Period Covered", "Effectivity: 08/11/2026 - 12/20/2026".
@@ -102,8 +118,9 @@ Inspect the document to detect the overall semester, term, or school year durati
 
 STEP 2 — CLASSIFY AND EXTRACT SECTIONS:
 
-A. "classSchedules" (Recurring Weekly Classes):
+A. "classSchedules" (Recurring Weekly Classes ONLY):
    - ONLY for weekly recurring lectures/labs repeating across the semester.
+   - If the document is an examination schedule, return [] here!
    - dayOfWeek: integer 0–6 (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat).
    - startTime / endTime: strictly 2-digit 24h format "HH:MM" (e.g. "08:00", "13:30", "17:00").
    - startDate / endDate: if detected per class or from semester info, format strictly as ISO-8601 (e.g. "2026-08-11T00:00:00.000Z").
@@ -113,9 +130,12 @@ B. "examWeekBlockers" (Whole-Week Blackout Windows):
    - Format: { "title": "Midterm Examination Week", "startDate": "<ISO-8601>", "endDate": "<ISO-8601>" }.
 
 C. "examEvents" (Individual Subject Exam Sessions):
-   - Specific exams with subject code, date, exact time, and room (e.g. "IT101 Midterm Exam on Wednesday Oct 14, 09:00 - 11:00 Room 302").
+   - Individual course exam sessions (e.g. "IT101 Midterm Exam on Wednesday Oct 14, 09:00 - 11:00 Room 302" or from an examination timetable).
+   - "subjectName": clean course code/name (e.g. "IT101").
+   - "title": descriptive title (e.g. "IT101 Midterm Exam").
    - If specific date is known: set "startDate" and "endDate" as ISO-8601.
    - If only day-of-week is known (e.g. "Mon 08:00 - 10:00"): set startDate=null, dayOfWeek=1, startTime="08:00", endTime="10:00".
+   - "room": room or null.
 
 D. "calendarEvents" (Non-Class Events & Holidays):
    - School activities, orientation, deadlines, holidays, sports festivals, workshops.
@@ -135,7 +155,7 @@ Return ONLY a valid JSON object matching this exact shape:
       "endTime": "<HH:MM>",
       "subjectName": "<Course Name>",
       "room": "<room or null>",
-      "modality": "<F2F | ONLINE | HYBRID>",
+      "modality": "<F2F | ONLINE>",
       "setType": "<A | B | BOTH | null>",
       "startDate": "<ISO-8601 datetime or null>",
       "endDate": "<ISO-8601 datetime or null>"
@@ -172,6 +192,8 @@ Return ONLY a valid JSON object matching this exact shape:
 }
 
 CRITICAL RULES:
+- NEVER put examination schedules or exam test slots into classSchedules! If the document is an examination schedule, return classSchedules as [] and put all exam slots into examEvents.
+- modality: strictly "F2F" or "ONLINE" (do NOT use "HYBRID"). If a class is conducted online or room mentions "ONLINE", "Canvas", "Zoom", "Virtual", "MS Teams", set modality to "ONLINE" and room to null (unless a specific meeting link or URL is provided).
 - All dates MUST have strictly 2-digit months and days (e.g. "2026-08-11" NOT "2026-8-11").
 - All times MUST have strictly 2-digit hours and minutes (e.g. "08:00" NOT "8:00").
 - If no items exist for an array, return [].
@@ -313,18 +335,77 @@ function normalizeResult(rawText: string): ParsedScheduleResult {
     };
   }
 
-  // 2. Normalize Class Schedules
-  const classSchedules: ParsedClassSchedule[] = (parsed.classSchedules ?? []).map((cs: any) => ({
-    dayOfWeek: typeof cs.dayOfWeek === "number" ? cs.dayOfWeek : 1,
-    startTime: ensureTime24h(cs.startTime, "08:00"),
-    endTime: ensureTime24h(cs.endTime, "09:30"),
-    subjectName: String(cs.subjectName || "Subject").trim(),
-    room: cs.room ? String(cs.room).trim() : null,
-    modality: ["F2F", "ONLINE", "HYBRID"].includes(cs.modality) ? cs.modality : "F2F",
-    setType: ["A", "B", "BOTH"].includes(cs.setType) ? cs.setType : null,
-    startDate: cs.startDate ? ensureIsoDate(cs.startDate) : (semesterInfo?.startDate ? ensureIsoDate(semesterInfo.startDate) : undefined),
-    endDate: cs.endDate ? ensureIsoDate(cs.endDate) : (semesterInfo?.endDate ? ensureIsoDate(semesterInfo.endDate) : null),
-  }));
+  const EXAM_KEYWORD_REGEX =
+    /\b(exam|examination|examinations|midterm|midterms|final|finals|prelim|prelims|semi-?final|semifinal|periodical|summative|assessment|quiz)\b/i;
+
+  const docLabelOrText = (semesterInfo?.label || "") + " " + rawText.slice(0, 1000);
+  const rawClassList: any[] = Array.isArray(parsed.classSchedules) ? parsed.classSchedules : [];
+  const rawExamList: any[] = Array.isArray(parsed.examEvents) ? parsed.examEvents : [];
+
+  const examClassCount = rawClassList.filter((cs: any) =>
+    EXAM_KEYWORD_REGEX.test(String(cs.subjectName || "")) ||
+    EXAM_KEYWORD_REGEX.test(String(cs.room || ""))
+  ).length;
+
+  const isDocExamSchedule =
+    /\b(exam|examination|midterm|final|prelim|semi-?final|periodical)\s*(?:exam\s*)?(?:schedule|sked|dates|timetable|roster)/i.test(docLabelOrText) ||
+    (rawClassList.length > 0 && examClassCount / rawClassList.length >= 0.35);
+
+  const toCleanExamEvent = (cs: any): ParsedExamEvent => {
+    const rawSubject = String(cs.subjectName || "Subject").trim();
+    const cleanSubject =
+      rawSubject
+        .replace(/\b(midterm|final|finals|prelim|prelims|semi-?final|semifinal|periodical|summative|exam|examination|quiz|assessment)\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim() || rawSubject;
+    const title = EXAM_KEYWORD_REGEX.test(rawSubject)
+      ? rawSubject
+      : `${cleanSubject} Exam`;
+
+    return {
+      subjectName: cleanSubject,
+      title,
+      startDate: cs.startDate ? ensureIsoDate(cs.startDate) : null,
+      endDate: cs.endDate ? ensureIsoDate(cs.endDate, cs.startDate) : null,
+      dayOfWeek: typeof cs.dayOfWeek === "number" ? cs.dayOfWeek : null,
+      startTime: ensureTime24h(cs.startTime, "08:00"),
+      endTime: ensureTime24h(cs.endTime, "10:00"),
+      room: cs.room ? String(cs.room).trim() : null,
+    };
+  };
+
+  // 2. Class Schedules vs Exam Schedules Separation
+  const finalClassSchedules: ParsedClassSchedule[] = [];
+  const migratedExamEvents: ParsedExamEvent[] = [];
+
+  for (const cs of rawClassList) {
+    const isExamItem =
+      isDocExamSchedule ||
+      EXAM_KEYWORD_REGEX.test(String(cs.subjectName || "")) ||
+      EXAM_KEYWORD_REGEX.test(String(cs.room || ""));
+
+    if (isExamItem) {
+      migratedExamEvents.push(toCleanExamEvent(cs));
+    } else {
+      const rawRoom = cs.room ? String(cs.room).trim() : null;
+      const isOnlineRoom = rawRoom ? /^(online|virtual|canvas|zoom|teams|ms\s*teams|gmeet|n\/?a|none)$/i.test(rawRoom) : false;
+      const isOnlineModality = cs.modality === "ONLINE" || isOnlineRoom || (rawRoom ? /\b(online|virtual|canvas|zoom)\b/i.test(rawRoom) : false);
+      const resolvedModality: "F2F" | "ONLINE" = isOnlineModality ? "ONLINE" : "F2F";
+      const resolvedRoom = isOnlineRoom ? null : rawRoom;
+
+      finalClassSchedules.push({
+        dayOfWeek: typeof cs.dayOfWeek === "number" ? cs.dayOfWeek : 1,
+        startTime: ensureTime24h(cs.startTime, "08:00"),
+        endTime: ensureTime24h(cs.endTime, "09:30"),
+        subjectName: String(cs.subjectName || "Subject").trim(),
+        room: resolvedRoom,
+        modality: resolvedModality,
+        setType: ["A", "B", "BOTH"].includes(cs.setType) ? cs.setType : null,
+        startDate: cs.startDate ? ensureIsoDate(cs.startDate) : (semesterInfo?.startDate ? ensureIsoDate(semesterInfo.startDate) : undefined),
+        endDate: cs.endDate ? ensureIsoDate(cs.endDate) : (semesterInfo?.endDate ? ensureIsoDate(semesterInfo.endDate) : null),
+      });
+    }
+  }
 
   // 3. Normalize Calendar Events
   const calendarEvents: ParsedCalendarEvent[] = (parsed.calendarEvents ?? []).map((ev: any) => ({
@@ -342,8 +423,8 @@ function normalizeResult(rawText: string): ParsedScheduleResult {
     endDate: ensureIsoDate(ew.endDate, ew.startDate),
   }));
 
-  // 5. Normalize Exam Events
-  const examEvents: ParsedExamEvent[] = (parsed.examEvents ?? []).map((ex: any) => ({
+  // 5. Normalize Exam Events (including any items migrated from classSchedules)
+  const directExamEvents: ParsedExamEvent[] = rawExamList.map((ex: any) => ({
     subjectName: ex.subjectName ? String(ex.subjectName).trim() : null,
     title: String(ex.title || `${ex.subjectName ?? "Subject"} Exam`).trim(),
     startDate: ex.startDate ? ensureIsoDate(ex.startDate) : null,
@@ -354,10 +435,12 @@ function normalizeResult(rawText: string): ParsedScheduleResult {
     room: ex.room ? String(ex.room).trim() : null,
   }));
 
+  const allExamEvents = [...directExamEvents, ...migratedExamEvents];
+
   // 6. Support legacy examWeeks array format for backwards compatibility
   const legacyExamWeeks: ParsedExamWeek[] = [
     ...examWeekBlockers.map((b) => ({ title: b.title, startDate: b.startDate, endDate: b.endDate })),
-    ...examEvents.map((e) => ({
+    ...allExamEvents.map((e) => ({
       title: e.title,
       startDate: e.startDate,
       endDate: e.endDate ?? e.startDate,
@@ -377,10 +460,10 @@ function normalizeResult(rawText: string): ParsedScheduleResult {
 
   return {
     semesterInfo,
-    classSchedules,
+    classSchedules: finalClassSchedules,
     calendarEvents,
     examWeekBlockers,
-    examEvents,
+    examEvents: allExamEvents,
     examWeeks: legacyExamWeeks,
   };
 }

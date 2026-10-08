@@ -123,6 +123,10 @@ STRICT RULES — FOLLOW THESE WITHOUT EXCEPTION:
 3. Do NOT fabricate facts, statistics, names, dates, or any information not explicitly stated in the context.
 4. When citing information, reference the source file naturally (e.g., "According to 'lecture1.pdf'...").
 5. Be concise, accurate, and educational in tone.
+6. For mathematical formulas, equations, or scientific notation, always format them using standard LaTeX:
+   - Use '$equation$' for inline formulas (e.g., '$E = mc^2$', '$x_1 + x_2$').
+   - Use '$$equation$$' on separate lines for standalone/block equations (e.g., '$$\\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a}$$').
+7. For code snippets, always specify the language in markdown fences (e.g. \`\`\`python, \`\`\`typescript).
 
 --- DOCUMENT CONTEXT ---
 ${contextBlock}

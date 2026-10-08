@@ -67,7 +67,7 @@ export class TaskController {
   public create = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
-    const { title, description, dueDate, completed, subjectId } = req.body;
+    const { title, description, dueDate, completed, color, subtasks, subjectId } = req.body;
     try {
       if (subjectId) {
         const existingTask = await this.taskRepository.findByTitleAndSubject(userId, title, subjectId);
@@ -76,7 +76,7 @@ export class TaskController {
         }
       }
 
-      const task = await this.taskRepository.create(userId, { title, description, dueDate, completed, subjectId });
+      const task = await this.taskRepository.create(userId, { title, description, dueDate, completed, color, subtasks, subjectId });
       return res.status(201).json({ code: 201, status: "success", data: task });
     } catch (error: any) {
       return res.status(500).json({ code: 500, status: "error", message: error.message });
@@ -87,7 +87,7 @@ export class TaskController {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
     const id = req.params.id as string;
-    const { title, description, dueDate, completed, subjectId } = req.body;
+    const { title, description, dueDate, completed, color, subtasks, subjectId } = req.body;
     try {
       if (title && subjectId) {
         const existingTask = await this.taskRepository.findByTitleAndSubject(userId, title, subjectId);
@@ -96,7 +96,7 @@ export class TaskController {
         }
       }
 
-      const task = await this.taskRepository.update(id, userId, { title, description, dueDate, completed, subjectId });
+      const task = await this.taskRepository.update(id, userId, { title, description, dueDate, completed, color, subtasks, subjectId });
       return res.status(200).json({ code: 200, status: "success", data: task });
     } catch (error: any) {
       if (error.code === 'P2025') {

@@ -25,11 +25,13 @@ import { AuthMiddleware } from '@/middlewares/auth-middleware';
 import { aiLimiter } from '@/middlewares/rate-limiter';
 import { NotebookController } from '@/controllers/notebook.controller';
 import { NotebookChatController } from '@/controllers/notebook-chat.controller';
+import { NotebookToolsController } from '@/controllers/notebook-tools.controller';
 
 const router = Router();
 const auth = new AuthMiddleware();
 const controller = new NotebookController();
 const chatController = new NotebookChatController();
+const toolsController = new NotebookToolsController();
 
 // Multer — memory storage, max 20MB, accepts any mimetype (validated in controller)
 const upload = multer({
@@ -126,6 +128,124 @@ router.post(
   auth.execute,
   aiLimiter,
   chatController.chat
+);
+
+// ── Week 8: Flashcard Decks & Cards ───────────────────────────────────────────
+router.get(
+  '/:notebookId/flashcards',
+  auth.execute,
+  toolsController.listDecks
+);
+
+router.post(
+  '/:notebookId/flashcards',
+  auth.execute,
+  toolsController.createDeck
+);
+
+router.post(
+  '/:notebookId/flashcards/generate',
+  auth.execute,
+  aiLimiter,
+  toolsController.generateFlashcards
+);
+
+router.get(
+  '/flashcards/:deckId',
+  auth.execute,
+  toolsController.getDeck
+);
+
+router.patch(
+  '/flashcards/:deckId',
+  auth.execute,
+  toolsController.updateDeck
+);
+
+router.delete(
+  '/flashcards/:deckId',
+  auth.execute,
+  toolsController.deleteDeck
+);
+
+router.post(
+  '/flashcards/:deckId/cards',
+  auth.execute,
+  toolsController.addCard
+);
+
+router.patch(
+  '/flashcards/cards/:cardId',
+  auth.execute,
+  toolsController.updateCard
+);
+
+router.delete(
+  '/flashcards/cards/:cardId',
+  auth.execute,
+  toolsController.deleteCard
+);
+
+// ── Week 8: Quizzes ───────────────────────────────────────────────────────────
+router.get(
+  '/:notebookId/quizzes',
+  auth.execute,
+  toolsController.listQuizzes
+);
+
+router.post(
+  '/:notebookId/quizzes',
+  auth.execute,
+  toolsController.createQuiz
+);
+
+router.post(
+  '/:notebookId/quizzes/generate',
+  auth.execute,
+  aiLimiter,
+  toolsController.generateQuiz
+);
+
+router.get(
+  '/quizzes/:quizId',
+  auth.execute,
+  toolsController.getQuiz
+);
+
+router.patch(
+  '/quizzes/:quizId',
+  auth.execute,
+  toolsController.updateQuiz
+);
+
+router.delete(
+  '/quizzes/:quizId',
+  auth.execute,
+  toolsController.deleteQuiz
+);
+
+router.post(
+  '/quizzes/:quizId/questions',
+  auth.execute,
+  toolsController.addQuestion
+);
+
+router.patch(
+  '/quizzes/questions/:questionId',
+  auth.execute,
+  toolsController.updateQuestion
+);
+
+router.delete(
+  '/quizzes/questions/:questionId',
+  auth.execute,
+  toolsController.deleteQuestion
+);
+
+router.post(
+  '/quizzes/:quizId/attempt',
+  auth.execute,
+  toolsController.submitAttempt
 );
 
 export default router;
