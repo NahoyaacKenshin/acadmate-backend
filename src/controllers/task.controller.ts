@@ -164,6 +164,9 @@ export class TaskController {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "An unexpected error occurred";
 
+      if (message.includes("No readable text detected")) {
+        return res.status(422).json({ code: 422, status: "error", message });
+      }
       if (message.includes("Unsupported file type")) {
         return res.status(415).json({ code: 415, status: "error", message });
       }

@@ -109,8 +109,11 @@ STUDENT'S EXISTING SUBJECTS LIST:
 ${subjectsPromptList}
 
 INSTRUCTIONS:
-1. Identify all deliverables, assignments, problem sets, project milestones, readings with deadlines, lab reports, and exam preparation items.
-2. For each task:
+1. FIRST, check if the image/document contains ANY readable or legible text.
+   - If the image/document contains NO readable or legible text (such as an empty sheet, blank document, photo of scenery, person, or object with no text), you MUST return:
+     { "hasText": false, "tasks": [] }
+2. If text is present, identify all deliverables, assignments, problem sets, project milestones, readings with deadlines, lab reports, and exam preparation items.
+3. For each task:
    - "title": Clear and concise task name (e.g. "Problem Set 4: Dynamic Programming", "Literature Review Draft", "Case Study 2").
    - "description": Relevant details, required pages, deliverables, guidelines, or topics covered. If none, null.
    - "dueDate": Target deadline in ISO-8601 format with Philippine timezone "+08:00" (e.g. "2026-10-20T23:59:00.000+08:00").
@@ -120,8 +123,9 @@ INSTRUCTIONS:
    - "subjectId": If the task clearly relates to one of the student's subjects in the list above, provide its exact "ID". If uncertain or no match, set null.
    - "subjectName": The course code or subject title mentioned in the document (e.g. "CS 101", "Linear Algebra", "ENG 2"). If none, null.
 
-3. Output format: Return ONLY a valid JSON object matching this exact shape, with no markdown or additional commentary:
+4. Output format: Return ONLY a valid JSON object matching this exact shape, with no markdown or additional commentary:
 {
+  "hasText": true,
   "tasks": [
     {
       "title": "<Task Title>",
@@ -133,7 +137,8 @@ INSTRUCTIONS:
   ]
 }
 
-If no tasks are detected in the document, return { "tasks": [] }.`;
+If no tasks are detected in the document but text is present, return { "hasText": true, "tasks": [] }.
+If NO legible text is present in the document/image, return { "hasText": false, "tasks": [] }.`;
 
   let promptParts: GeminiPart[];
 
@@ -154,6 +159,9 @@ If no tasks are detected in the document, return { "tasks": [] }.`;
     mimeType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
     const docxText = await extractFromDocx(buffer);
+    if (!docxText || docxText.trim().length < 5) {
+      throw new Error('No readable text detected in this file. Please upload a clear document or photo with legible text.');
+    }
     promptParts = [
       { text: `${systemPrompt}\n\nDOCUMENT TEXT:\n${docxText}` },
     ];
@@ -163,8 +171,12 @@ If no tasks are detected in the document, return { "tasks": [] }.`;
       { inlineData: { mimeType, data: buffer.toString("base64") } },
     ];
   } else if (mimeType === "text/plain") {
+    const textContent = buffer.toString("utf-8");
+    if (!textContent || textContent.trim().length < 5) {
+      throw new Error('No readable text detected in this file. Please upload a clear document or photo with legible text.');
+    }
     promptParts = [
-      { text: `${systemPrompt}\n\nDOCUMENT TEXT:\n${buffer.toString("utf-8")}` },
+      { text: `${systemPrompt}\n\nDOCUMENT TEXT:\n${textContent}` },
     ];
   } else {
     throw new Error(`Unsupported file type: ${mimeType}`);
@@ -184,6 +196,10 @@ function normalizeTaskScanResult(rawText: string): { tasks: ParsedTask[] } {
     parsed = JSON.parse(jsonText);
   } catch {
     throw new Error(`[TaskParser] Gemini returned non-JSON output: ${rawText.slice(0, 200)}`);
+  }
+
+  if (parsed?.hasText === false) {
+    throw new Error('No readable text detected in this file. Please upload a clear document or photo with legible text.');
   }
 
   const rawTasks = Array.isArray(parsed?.tasks) ? parsed.tasks : [];

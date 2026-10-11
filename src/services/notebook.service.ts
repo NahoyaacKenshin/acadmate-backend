@@ -51,7 +51,7 @@ async function extractText(
     const base64 = buffer.toString('base64');
     return await generateWithFallback([
       {
-        text: 'Extract ALL text from this PDF document image/pages exactly as it appears. Output raw text only, no markdown or formatting.',
+        text: 'Extract ALL text from this PDF document image/pages exactly as it appears. Output raw text only, no markdown or formatting. If there is NO readable or legible text in the document, output strictly: NO_TEXT_FOUND',
       },
       { inlineData: { mimeType: 'application/pdf', data: base64 } },
     ]);
@@ -72,7 +72,7 @@ async function extractText(
     const base64 = buffer.toString('base64');
     return await generateWithFallback([
       {
-        text: 'Extract ALL text from this document image exactly as it appears. Output raw text only, no markdown or formatting.',
+        text: 'Extract ALL text from this document image exactly as it appears. Output raw text only, no markdown or formatting. If there is NO readable or legible text in the image, output strictly: NO_TEXT_FOUND',
       },
       { inlineData: { mimeType, data: base64 } },
     ]);
@@ -133,36 +133,17 @@ export function resolveFileType(mimeType: string): SourceFileType {
  * Runs asynchronously after the upload endpoint returns.
  * Updates Source status and stores SourceChunk rows with pgvector embeddings.
  */
-async function processSource(sourceId: string, buffer: Buffer, mimeType: string): Promise<void> {
+async function processSourceWithText(sourceId: string, normalized: string): Promise<void> {
   try {
-    // 1. Mark as PROCESSING
-    await prisma.source.update({
-      where: { id: sourceId },
-      data: { status: SourceStatus.PROCESSING },
-    });
-
-    // 2. Get source record for fileType & notebookId
     const source = await prisma.source.findUniqueOrThrow({ where: { id: sourceId } });
 
-    // 3. Extract text
-    const rawText = await extractText(buffer, source.fileType, mimeType);
-
-    // 4. Normalize
-    const normalized = normalizeText(rawText);
-
-    // Empty or unreadable text check
-    if (normalized.length < 20) {
-      throw new Error('Document contained no readable text or is empty. Please verify the file.');
-    }
-
-    // 5. Chunk
+    // Chunk
     const chunks = chunkText(normalized);
-
     if (chunks.length === 0) {
       throw new Error('Document could not be processed into text chunks.');
     }
 
-    // 6. Embed each chunk and store via pgvector raw SQL
+    // Embed each chunk and store via pgvector raw SQL
     for (let i = 0; i < chunks.length; i++) {
       const embedding = await generateEmbedding(chunks[i]);
       const vectorLiteral = `[${embedding.join(',')}]`;
@@ -181,7 +162,7 @@ async function processSource(sourceId: string, buffer: Buffer, mimeType: string)
       `;
     }
 
-    // 7. Mark as READY, store rawText
+    // Mark as READY, store rawText
     await prisma.source.update({
       where: { id: sourceId },
       data: {
@@ -192,6 +173,55 @@ async function processSource(sourceId: string, buffer: Buffer, mimeType: string)
     });
 
     console.log(`[NotebookService] processSource ${sourceId}: READY (${chunks.length} chunks)`);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(`[NotebookService] processSource ${sourceId} FAILED:`, message);
+
+    await prisma.sourceChunk.deleteMany({
+      where: { sourceId },
+    }).catch(() => { /* swallow */ });
+
+    await prisma.source.update({
+      where: { id: sourceId },
+      data: {
+        status: SourceStatus.FAILED,
+        errorMsg: message.slice(0, 500),
+        updatedAt: new Date(),
+      },
+    }).catch(() => { /* swallow — avoid double-error */ });
+  }
+}
+
+async function processSource(sourceId: string, buffer: Buffer, mimeType: string): Promise<void> {
+  try {
+    // 1. Mark as PROCESSING
+    await prisma.source.update({
+      where: { id: sourceId },
+      data: { status: SourceStatus.PROCESSING },
+    });
+
+    // 2. Get source record for fileType & notebookId
+    const source = await prisma.source.findUniqueOrThrow({ where: { id: sourceId } });
+
+    // 3. Extract text
+    const rawText = await extractText(buffer, source.fileType, mimeType);
+
+    // 4. Normalize
+    const normalized = normalizeText(rawText);
+
+    // Empty or unreadable text check
+    const isNoText =
+      !normalized ||
+      normalized.length < 20 ||
+      normalized.toUpperCase().includes('NO_TEXT_FOUND') ||
+      normalized.toLowerCase() === 'no text' ||
+      normalized.toLowerCase() === 'no text found.';
+
+    if (isNoText) {
+      throw new Error('No readable text detected in this file. Please verify the document or photo contains legible text.');
+    }
+
+    await processSourceWithText(sourceId, normalized);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[NotebookService] processSource ${sourceId} FAILED:`, message);
@@ -215,8 +245,9 @@ async function processSource(sourceId: string, buffer: Buffer, mimeType: string)
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Uploads a file to Supabase Storage, creates a Source record (status: PENDING),
- * fires off background processing (no await), and returns the Source immediately.
+ * Uploads a file to Supabase Storage, creates a Source record (status: PROCESSING),
+ * fires off background chunking & embedding, and returns the Source immediately.
+ * Validates text extraction synchronously so files without readable text are prevented from upload.
  */
 export async function uploadSourceFile(
   notebookId: string,
@@ -226,10 +257,26 @@ export async function uploadSourceFile(
   buffer: Buffer
 ) {
   const fileType = resolveFileType(mimeType);
+
+  // 1. Extract and validate readable text BEFORE creating Source or uploading to Storage
+  const rawText = await extractText(buffer, fileType, mimeType);
+  const normalized = normalizeText(rawText);
+
+  const isNoText =
+    !normalized ||
+    normalized.length < 20 ||
+    normalized.toUpperCase().includes('NO_TEXT_FOUND') ||
+    normalized.toLowerCase() === 'no text' ||
+    normalized.toLowerCase() === 'no text found.';
+
+  if (isNoText) {
+    throw new Error('No readable text detected in this file. Please upload a clear document or photo with legible text.');
+  }
+
   const ext = fileName.split('.').pop() ?? 'bin';
   const storagePath = `${userId}/${notebookId}/${Date.now()}_${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
-  // 1. Upload to Supabase Storage
+  // 2. Upload to Supabase Storage
   const { error: uploadError } = await supabase.storage
     .from(BUCKET!)
     .upload(storagePath, buffer, { contentType: mimeType, upsert: false });
@@ -238,21 +285,21 @@ export async function uploadSourceFile(
     throw new Error(`[NotebookService] Supabase upload failed: ${uploadError.message}`);
   }
 
-  // 2. Create Source record
+  // 3. Create Source record in PROCESSING status
   const source = await prisma.source.create({
     data: {
       fileName,
       fileType,
       storagePath,
-      status: SourceStatus.PENDING,
+      status: SourceStatus.PROCESSING,
       notebookId,
       userId,
     },
   });
 
-  // 3. Fire off background processing — intentionally not awaited
-  processSource(source.id, buffer, mimeType).catch((err) => {
-    console.error('[NotebookService] Background processSource uncaught error:', err);
+  // 4. Fire off background chunking & embedding using pre-extracted text (no re-extraction needed)
+  processSourceWithText(source.id, normalized).catch((err) => {
+    console.error('[NotebookService] Background processSourceWithText uncaught error:', err);
   });
 
   return source;

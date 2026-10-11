@@ -117,6 +117,18 @@ export class NotebookController {
       const sources = await prisma.source.findMany({ where: { notebookId: id } });
       await Promise.all(sources.map((s) => deleteSource(s.id, userId)));
 
+      // Delete any study session calendar events booked for this notebook
+      await prisma.calendarEvent.deleteMany({
+        where: {
+          userId,
+          OR: [
+            { location: `study_session:${id}` },
+            { location: { startsWith: `study_session:${id}` } },
+            { id: { startsWith: `study_${id}_` } },
+          ],
+        },
+      });
+
       // Delete notebook (cascades sources/chunks in DB)
       await prisma.notebook.delete({ where: { id } });
       res.status(200).json({ status: 'success', message: 'Notebook deleted.' });
@@ -213,7 +225,15 @@ export class NotebookController {
         message: 'File uploaded. Processing started in background.',
         data: source,
       });
-    } catch (err) {
+    } catch (err: any) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('No readable text detected')) {
+        res.status(422).json({
+          status: 'error',
+          message: msg,
+        });
+        return;
+      }
       this.handleError(res, err, 'uploadSource');
     }
   };
