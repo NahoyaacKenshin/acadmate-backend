@@ -1,5 +1,5 @@
 import { OAuth2Client } from "google-auth-library";
-import { prisma } from "@/lib/prisma";
+import { prisma, withDbRetry } from "@/lib/prisma";
 import { signAccessToken, signRefreshToken, TokenExpiry } from "@/lib/jwt";
 import { TokenRepository } from "@/repositories/token.repository";
 import { ENV } from "@/config/env";
@@ -27,31 +27,33 @@ export async function GoogleAuthService(idToken: string) {
       return { code: 400, status: "error", message: "Google account has no associated email address" };
     }
 
-    // 2. Find or create user
-    let user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { googleId },
-          { email },
-        ],
-      },
-    });
-
-    if (user) {
-      // User exists — link Google account if not already linked, and ensure email is verified
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          googleId: user.googleId ?? googleId,
-          emailVerified: user.emailVerified ?? (email_verified ? new Date() : undefined),
-          // Only update name/avatar if they were never set
-          name: user.name ?? (name ?? null),
-          avatarUrl: user.avatarUrl ?? (picture ?? null),
+    // 2. Find or create user with retry resilience for serverless database cold-starts
+    const user = await withDbRetry(async () => {
+      let existingUser = await prisma.user.findFirst({
+        where: {
+          OR: [
+            { googleId },
+            { email },
+          ],
         },
       });
-    } else {
+
+      if (existingUser) {
+        // User exists — link Google account if not already linked, and ensure email is verified
+        return await prisma.user.update({
+          where: { id: existingUser.id },
+          data: {
+            googleId: existingUser.googleId ?? googleId,
+            emailVerified: existingUser.emailVerified ?? (email_verified ? new Date() : undefined),
+            // Only update name/avatar if they were never set
+            name: existingUser.name ?? (name ?? null),
+            avatarUrl: existingUser.avatarUrl ?? (picture ?? null),
+          },
+        });
+      }
+
       // New user — create account (no password required)
-      user = await prisma.user.create({
+      return await prisma.user.create({
         data: {
           email,
           googleId,
@@ -61,17 +63,19 @@ export async function GoogleAuthService(idToken: string) {
           hasCompletedOnboarding: false,
         },
       });
-    }
+    });
 
     // 3. Issue Acadmate JWTs
     const accessToken = signAccessToken(user.id, user.role, TokenExpiry.ACCESS_TOKEN_EXPIRES);
     const refreshToken = signRefreshToken(user.id, user.role, TokenExpiry.REFRESH_TOKEN_EXPIRES);
 
-    await tokenRepository.createRefreshToken({
-      userId: user.id,
-      token: refreshToken,
-      expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
+    await withDbRetry(() =>
+      tokenRepository.createRefreshToken({
+        userId: user.id,
+        token: refreshToken,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      })
+    );
 
     return {
       code: 200,

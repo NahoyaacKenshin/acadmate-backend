@@ -434,6 +434,8 @@ export async function updateSource(
  * Ensures an HNSW vector index exists on SourceChunk.embedding for sub-millisecond similarity lookups.
  */
 export async function ensureVectorIndex(): Promise<void> {
+  // Allow connection pool and serverless compute a brief warm-up window after boot
+  await new Promise((resolve) => setTimeout(resolve, 1500));
   try {
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS source_chunk_embedding_hnsw_idx 
