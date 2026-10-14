@@ -32,8 +32,8 @@ export async function RefreshTokenService(refreshToken?: string) {
   // 4. Token Rotation: Consume the old token and generate a new pair
   await tokenRepository.consumeToken(dbToken.id);
 
-  const accessToken = signAccessToken(user.id, user.role, TokenExpiry.ACCESS_TOKEN_EXPIRES);
-  const newRefreshToken = signRefreshToken(user.id, user.role, TokenExpiry.REFRESH_TOKEN_EXPIRES);
+  const accessToken = signAccessToken(user.id, TokenExpiry.ACCESS_TOKEN_EXPIRES);
+  const newRefreshToken = signRefreshToken(user.id, TokenExpiry.REFRESH_TOKEN_EXPIRES);
 
   // 5. Store the new refresh token
   await tokenRepository.createRefreshToken({
@@ -57,7 +57,6 @@ export async function RefreshTokenService(refreshToken?: string) {
         id: user.id,
         email: user.email,
         name: user.name,
-        role: user.role,
       },
     },
   };

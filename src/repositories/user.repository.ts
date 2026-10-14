@@ -4,7 +4,7 @@ export class UserRepository {
   async findById(id: string) {
     return await prisma.user.findFirst({ 
       where: { id },
-      select: { id: true, name: true, email: true, createdAt: true, role: true, emailVerified: true },
+      select: { id: true, name: true, email: true, createdAt: true, emailVerified: true },
     });
   }
 
@@ -15,7 +15,7 @@ export class UserRepository {
   async create(data: { name?: string | null; email?: string | null; password?: string | null; emailVerified?: Date | null }) {
     return await prisma.user.create({ 
       data,
-      select: { id: true, name: true, email: true, createdAt: true, role: true, emailVerified: true },
+      select: { id: true, name: true, email: true, createdAt: true, emailVerified: true },
     });
   }
 

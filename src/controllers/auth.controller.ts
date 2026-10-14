@@ -155,7 +155,7 @@ export class AuthController {
           ...(studentSet !== undefined ? { studentSet: studentSet ? String(studentSet).trim() : null } : {}),
           ...(hasCompletedOnboarding !== undefined ? { hasCompletedOnboarding: Boolean(hasCompletedOnboarding) } : {}),
         },
-        select: { id: true, name: true, email: true, role: true, emailVerified: true, programName: true, studentSet: true, hasCompletedOnboarding: true },
+        select: { id: true, name: true, email: true, emailVerified: true, programName: true, studentSet: true, hasCompletedOnboarding: true },
       });
       return res.status(200).json({ code: 200, status: "success", data: { user: updated } });
     } catch (error) {

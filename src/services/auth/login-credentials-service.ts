@@ -19,8 +19,8 @@ export async function LoginCredentialsService(email: string, password: string) {
     }
 
     // Generate Tokens
-    const accessToken = signAccessToken(user.id, user.role, TokenExpiry.ACCESS_TOKEN_EXPIRES);
-    const refreshToken = signRefreshToken(user.id, user.role, TokenExpiry.REFRESH_TOKEN_EXPIRES);
+    const accessToken = signAccessToken(user.id, TokenExpiry.ACCESS_TOKEN_EXPIRES);
+    const refreshToken = signRefreshToken(user.id, TokenExpiry.REFRESH_TOKEN_EXPIRES);
 
     // Save Refresh Token to DB for tracking/rotation
     await tokenRepository.createRefreshToken({
@@ -44,7 +44,6 @@ export async function LoginCredentialsService(email: string, password: string) {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
           programName: user.programName ?? null,
           studentSet: user.studentSet ?? null,
           hasCompletedOnboarding: user.hasCompletedOnboarding,

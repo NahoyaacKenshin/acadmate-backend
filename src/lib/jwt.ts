@@ -1,6 +1,6 @@
 import jwt, { SignOptions } from "jsonwebtoken";
 
-export type JwtPayload = { sub: string; role: string; type: "access" | "refresh" };
+export type JwtPayload = { sub: string; type: "access" | "refresh"; role?: string };
 const jwtSecret = process.env.JWT_SECRET ? (process.env.JWT_SECRET as string) : "no-jwt-key";
 
 export enum TokenExpiry {
@@ -8,13 +8,13 @@ export enum TokenExpiry {
   REFRESH_TOKEN_EXPIRES = "7d",
 }
 
-export function signAccessToken(userId: string, role: string, duration: SignOptions["expiresIn"]) {
-  const payload: JwtPayload = { sub: userId, role, type: "access" };
+export function signAccessToken(userId: string, duration: SignOptions["expiresIn"], role?: string) {
+  const payload: JwtPayload = { sub: userId, type: "access", ...(role ? { role } : {}) };
   return jwt.sign(payload, jwtSecret, { expiresIn: duration });
 }
 
-export function signRefreshToken(userId: string, role: string, duration: SignOptions["expiresIn"]) {
-  const payload: JwtPayload = { sub: userId, role, type: "refresh" };
+export function signRefreshToken(userId: string, duration: SignOptions["expiresIn"], role?: string) {
+  const payload: JwtPayload = { sub: userId, type: "refresh", ...(role ? { role } : {}) };
   return jwt.sign(payload, jwtSecret, { expiresIn: duration });
 }
 

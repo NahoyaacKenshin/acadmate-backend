@@ -71,7 +71,7 @@ export async function listFlashcardDecks(notebookId: string, userId: string) {
     where: { notebookId, userId },
     include: {
       cards: {
-        select: { id: true, isMastered: true },
+        orderBy: { createdAt: 'asc' },
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -79,10 +79,12 @@ export async function listFlashcardDecks(notebookId: string, userId: string) {
 
   return decks.map((d) => ({
     id: d.id,
+    notebookId: d.notebookId,
     title: d.title,
     description: d.description,
     totalCards: d.cards.length,
     masteredCards: d.cards.filter((c) => c.isMastered).length,
+    cards: d.cards,
     createdAt: d.createdAt,
     updatedAt: d.updatedAt,
   }));
@@ -302,7 +304,7 @@ export async function listQuizzes(notebookId: string, userId: string) {
   const quizzes = await prisma.quiz.findMany({
     where: { notebookId, userId },
     include: {
-      questions: { select: { id: true } },
+      questions: { orderBy: { createdAt: 'asc' } },
       attempts: {
         orderBy: { score: 'desc' },
         take: 1,
@@ -314,10 +316,12 @@ export async function listQuizzes(notebookId: string, userId: string) {
 
   return quizzes.map((q) => ({
     id: q.id,
+    notebookId: q.notebookId,
     title: q.title,
     description: q.description,
     totalQuestions: q.questions.length,
     bestAttempt: q.attempts[0] ?? null,
+    questions: q.questions,
     createdAt: q.createdAt,
     updatedAt: q.updatedAt,
   }));

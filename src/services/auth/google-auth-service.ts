@@ -66,8 +66,8 @@ export async function GoogleAuthService(idToken: string) {
     });
 
     // 3. Issue Acadmate JWTs
-    const accessToken = signAccessToken(user.id, user.role, TokenExpiry.ACCESS_TOKEN_EXPIRES);
-    const refreshToken = signRefreshToken(user.id, user.role, TokenExpiry.REFRESH_TOKEN_EXPIRES);
+    const accessToken = signAccessToken(user.id, TokenExpiry.ACCESS_TOKEN_EXPIRES);
+    const refreshToken = signRefreshToken(user.id, TokenExpiry.REFRESH_TOKEN_EXPIRES);
 
     await withDbRetry(() =>
       tokenRepository.createRefreshToken({
@@ -93,7 +93,6 @@ export async function GoogleAuthService(idToken: string) {
           email: user.email,
           name: user.name,
           avatarUrl: user.avatarUrl,
-          role: user.role,
           programName: user.programName ?? null,
           studentSet: user.studentSet ?? null,
           hasCompletedOnboarding: user.hasCompletedOnboarding,
