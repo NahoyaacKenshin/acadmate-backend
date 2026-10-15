@@ -28,6 +28,7 @@ export interface ParsedSemesterInfo {
 
 export interface ParsedClassSchedule {
   dayOfWeek: number; // 0 = Sunday … 6 = Saturday
+  daysOfWeek?: number[]; // [0...6] when class occurs on multiple days
   startTime: string; // "HH:MM" 24-hour (strictly 2-digit e.g. "08:00")
   endTime: string;   // "HH:MM" 24-hour (strictly 2-digit e.g. "17:30")
   subjectName: string;
@@ -122,6 +123,7 @@ A. "classSchedules" (Recurring Weekly Classes ONLY):
    - ONLY for weekly recurring lectures/labs repeating across the semester.
    - If the document is an examination schedule, return [] here!
    - dayOfWeek: integer 0–6 (0=Sun, 1=Mon, 2=Tue, 3=Wed, 4=Thu, 5=Fri, 6=Sat).
+   - daysOfWeek: array of integers 0–6 (e.g. [2, 4] for Tuesday and Thursday). If a class/subject meets on multiple days of the week at the same time and room (e.g. T-TH, M-W-F), COMBINE them into a single entry with "daysOfWeek": [2, 4] and "dayOfWeek": 2. DO NOT output multiple duplicate entries for each day!
    - startTime / endTime: strictly 2-digit 24h format "HH:MM" (e.g. "08:00", "13:30", "17:00").
    - startDate / endDate: if detected per class or from semester info, format strictly as ISO-8601 (e.g. "2026-08-11T00:00:00.000Z").
 
@@ -151,6 +153,7 @@ Return ONLY a valid JSON object matching this exact shape:
   "classSchedules": [
     {
       "dayOfWeek": <0-6>,
+      "daysOfWeek": [<0-6>],
       "startTime": "<HH:MM>",
       "endTime": "<HH:MM>",
       "subjectName": "<Course Name>",
@@ -393,8 +396,13 @@ function normalizeResult(rawText: string): ParsedScheduleResult {
       const resolvedModality: "F2F" | "ONLINE" = isOnlineModality ? "ONLINE" : "F2F";
       const resolvedRoom = isOnlineRoom ? null : rawRoom;
 
+      const rawDaysOfWeek = Array.isArray(cs.daysOfWeek) && cs.daysOfWeek.length > 0
+        ? cs.daysOfWeek.map(Number).filter((d: number) => !isNaN(d) && d >= 0 && d <= 6)
+        : (typeof cs.dayOfWeek === "number" ? [cs.dayOfWeek] : [1]);
+
       finalClassSchedules.push({
-        dayOfWeek: typeof cs.dayOfWeek === "number" ? cs.dayOfWeek : 1,
+        dayOfWeek: rawDaysOfWeek[0] ?? (typeof cs.dayOfWeek === "number" ? cs.dayOfWeek : 1),
+        daysOfWeek: rawDaysOfWeek,
         startTime: ensureTime24h(cs.startTime, "08:00"),
         endTime: ensureTime24h(cs.endTime, "09:30"),
         subjectName: String(cs.subjectName || "Subject").trim(),
@@ -460,12 +468,56 @@ function normalizeResult(rawText: string): ParsedScheduleResult {
 
   return {
     semesterInfo,
-    classSchedules: finalClassSchedules,
+    classSchedules: mergeClassSchedules(finalClassSchedules),
     calendarEvents,
     examWeekBlockers,
     examEvents: allExamEvents,
     examWeeks: legacyExamWeeks,
   };
+}
+
+export function mergeClassSchedules(classes: ParsedClassSchedule[]): ParsedClassSchedule[] {
+  const map = new Map<string, ParsedClassSchedule>();
+
+  for (const c of classes) {
+    const normSubject = (c.subjectName ?? "").trim().toLowerCase();
+    const normStart = (c.startTime ?? "").trim();
+    const normEnd = (c.endTime ?? "").trim();
+    const normRoom = (c.room ?? "").trim().toLowerCase();
+    const normModality = (c.modality ?? "F2F").toUpperCase();
+    const normSet = c.setType === "BOTH" || !c.setType ? "" : c.setType;
+    const normStartDate = c.startDate ? c.startDate.slice(0, 10) : "";
+    const normEndDate = c.endDate ? c.endDate.slice(0, 10) : "";
+
+    const key = `${normSubject}|${normStart}|${normEnd}|${normRoom}|${normModality}|${normSet}|${normStartDate}|${normEndDate}`;
+
+    const currentDays = Array.isArray(c.daysOfWeek) && c.daysOfWeek.length > 0
+      ? c.daysOfWeek
+      : (typeof c.dayOfWeek === "number" ? [c.dayOfWeek] : [1]);
+
+    const existing = map.get(key);
+    if (!existing) {
+      const sortedDays = Array.from(new Set(currentDays)).sort((a, b) => a - b);
+      map.set(key, {
+        ...c,
+        dayOfWeek: sortedDays[0] ?? c.dayOfWeek,
+        daysOfWeek: sortedDays,
+      });
+    } else {
+      const existingDays = Array.isArray(existing.daysOfWeek) && existing.daysOfWeek.length > 0
+        ? existing.daysOfWeek
+        : [existing.dayOfWeek];
+      const mergedDays = Array.from(new Set([...existingDays, ...currentDays])).sort((a, b) => a - b);
+
+      map.set(key, {
+        ...existing,
+        dayOfWeek: mergedDays[0] ?? existing.dayOfWeek,
+        daysOfWeek: mergedDays,
+      });
+    }
+  }
+
+  return Array.from(map.values());
 }
 
 // ── Strict ISO-8601 & Time Helpers ─────────────────────────────────────────────
