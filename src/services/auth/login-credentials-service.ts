@@ -44,7 +44,7 @@ export async function LoginCredentialsService(email: string, password: string) {
           id: user.id,
           email: user.email,
           name: user.name,
-          programName: user.programName ?? null,
+          avatarUrl: user.avatarUrl ?? null,
           studentSet: user.studentSet ?? null,
           hasCompletedOnboarding: user.hasCompletedOnboarding,
         },

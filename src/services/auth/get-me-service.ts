@@ -8,8 +8,8 @@ export const GetMeService = async (userId: string) => {
         id: true,
         name: true,
         email: true,
+        avatarUrl: true,
         emailVerified: true,
-        programName: true,
         studentSet: true,
         hasCompletedOnboarding: true,
       }

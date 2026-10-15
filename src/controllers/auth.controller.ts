@@ -136,7 +136,7 @@ export class AuthController {
     return res.status(result.code).json(result);
   };
 
-  // Update Current User Profile (name, programName)
+  // Update Current User Profile (name, avatarUrl)
   public updateMe = async (req: Request, res: Response) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const userId = (req as any).user?.sub;
@@ -144,18 +144,18 @@ export class AuthController {
       return res.status(401).json({ code: 401, status: "error", message: "Unauthorized" });
     }
 
-    const { name, programName, studentSet, hasCompletedOnboarding } = req.body ?? {};
+    const { name, avatarUrl, studentSet, hasCompletedOnboarding } = req.body ?? {};
 
     try {
       const updated = await (await import("@/lib/prisma")).prisma.user.update({
         where: { id: userId },
         data: {
           ...(name !== undefined ? { name: String(name).trim() } : {}),
-          ...(programName !== undefined ? { programName: programName ? String(programName).trim() : null } : {}),
+          ...(avatarUrl !== undefined ? { avatarUrl: avatarUrl ? String(avatarUrl).trim() : null } : {}),
           ...(studentSet !== undefined ? { studentSet: studentSet ? String(studentSet).trim() : null } : {}),
           ...(hasCompletedOnboarding !== undefined ? { hasCompletedOnboarding: Boolean(hasCompletedOnboarding) } : {}),
         },
-        select: { id: true, name: true, email: true, emailVerified: true, programName: true, studentSet: true, hasCompletedOnboarding: true },
+        select: { id: true, name: true, email: true, emailVerified: true, avatarUrl: true, studentSet: true, hasCompletedOnboarding: true },
       });
       return res.status(200).json({ code: 200, status: "success", data: { user: updated } });
     } catch (error) {

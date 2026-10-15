@@ -93,7 +93,6 @@ export async function GoogleAuthService(idToken: string) {
           email: user.email,
           name: user.name,
           avatarUrl: user.avatarUrl,
-          programName: user.programName ?? null,
           studentSet: user.studentSet ?? null,
           hasCompletedOnboarding: user.hasCompletedOnboarding,
         },
