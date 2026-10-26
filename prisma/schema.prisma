@@ -34,7 +34,6 @@ model User {
   classSchedules   ClassSchedule[]
   calendarEvents   CalendarEvent[]
   examWeeks        ExamWeek[]
-  semesterRules    SemesterRule[]
   notebooks        Notebook[]
   sources          Source[]
   chatSessions     ChatSession[]
@@ -96,7 +95,6 @@ model Task {
 enum Modality {
   F2F
   ONLINE
-  HYBRID
 }
 
 enum SetType {
@@ -179,31 +177,6 @@ model ExamWeek {
   @@index([userId])
 }
 
-// ── Week 4: Admin System & Set A/B Scheduling Logic ──────────────────────────
-
-enum StudentSet {
-  A
-  B
-}
-
-/// Student-defined custom modality override rules for alternating days.
-/// Synced locally to the student's phone via PowerSync.
-model SemesterRule {
-  id        String     @id @default(uuid())
-  startDate DateTime   // The start date this rule applies from
-  endDate   DateTime?  // Optional end date this rule applies to
-  dayOfWeek Int        // Day of week: 0 = Sun, 1 = Mon, 2 = Tue, 3 = Wed, 4 = Thu, 5 = Fri, 6 = Sat
-  setType   StudentSet // A or B
-  label     String?    // Optional human-readable label or note
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([startDate])
-}
 
 // ── Week 5: AI Notebook & RAG Pipeline ────────────────────────────────────────
 
@@ -321,11 +294,13 @@ model ChatMessageHistory {
 // ── Week 8: Flashcards & Quizzes ──────────────────────────────────────────────
 
 model FlashcardDeck {
-  id          String      @id @default(uuid())
-  title       String
-  description String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id           String      @id @default(uuid())
+  title        String
+  description  String?
+  status       String      @default("READY") // "GENERATING" | "READY" | "FAILED"
+  errorMessage String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 
   notebookId  String
   notebook    Notebook    @relation(fields: [notebookId], references: [id], onDelete: Cascade)
@@ -352,11 +327,13 @@ model Flashcard {
 }
 
 model Quiz {
-  id          String         @id @default(uuid())
-  title       String
-  description String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id           String         @id @default(uuid())
+  title        String
+  description  String?
+  status       String         @default("READY") // "GENERATING" | "READY" | "FAILED"
+  errorMessage String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
 
   notebookId  String
   notebook    Notebook       @relation(fields: [notebookId], references: [id], onDelete: Cascade)

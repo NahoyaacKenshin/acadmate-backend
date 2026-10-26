@@ -20,11 +20,11 @@ COPY prisma ./prisma/
 # Install dependencies (clean install)
 RUN npm ci
 
-# Generate Prisma Client (outputs to src/generated/prisma)
-RUN npx prisma generate
-
 # Copy source code
 COPY src ./src
+
+# Generate Prisma Client (outputs to src/generated/prisma)
+RUN npx prisma generate
 
 # Build TypeScript
 RUN npm run build
@@ -53,10 +53,12 @@ COPY prisma ./prisma/
 # Install only production dependencies
 RUN npm ci --omit=dev && npm cache clean --force
 
-# Copy generated Prisma Client and source code
+# Copy source code
+COPY src ./src
+
+# Copy generated Prisma Client and compiled dist from builder
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/dist ./dist
-COPY src ./src
 
 # Change ownership to non-root user
 RUN chown -R acadmate:nodejs /app

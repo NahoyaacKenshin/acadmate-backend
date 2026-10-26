@@ -11,7 +11,6 @@ const ALLOWED_TABLES: Record<string, keyof typeof prisma> = {
   ClassSchedule: "classSchedule",
   CalendarEvent: "calendarEvent",
   ExamWeek: "examWeek",
-  SemesterRule: "semesterRule",
 };
 
 // Strict whitelist of allowed writable columns per Prisma model.
@@ -60,16 +59,6 @@ const ALLOWED_COLUMNS: Record<string, Set<string>> = {
     "subjectId",
   ]),
   ExamWeek: new Set(["title", "startDate", "endDate", "createdAt", "updatedAt", "userId"]),
-  SemesterRule: new Set([
-    "startDate",
-    "endDate",
-    "dayOfWeek",
-    "setType",
-    "label",
-    "createdAt",
-    "updatedAt",
-    "userId",
-  ]),
 };
 
 export class SyncController {
@@ -197,7 +186,7 @@ export class SyncController {
       }
       if ("modality" in sanitized && typeof sanitized.modality === "string") {
         const upper = sanitized.modality.toUpperCase();
-        sanitized.modality = ["F2F", "ONLINE", "HYBRID"].includes(upper) ? upper : "F2F";
+        sanitized.modality = ["F2F", "ONLINE"].includes(upper) ? upper : "F2F";
       }
       if ("setType" in sanitized) {
         if (!sanitized.setType || (typeof sanitized.setType === "string" && sanitized.setType.trim() === "")) {
@@ -220,19 +209,6 @@ export class SyncController {
       if ("updatedAt" in sanitized) sanitized.updatedAt = this.ensureIsoDate(sanitized.updatedAt);
     }
 
-    if (table === "SemesterRule") {
-      if ("dayOfWeek" in sanitized && typeof sanitized.dayOfWeek === "string") {
-        sanitized.dayOfWeek = parseInt(sanitized.dayOfWeek, 10) || 0;
-      }
-      if ("setType" in sanitized && typeof sanitized.setType === "string") {
-        const upper = sanitized.setType.toUpperCase();
-        sanitized.setType = upper === "B" ? "B" : "A";
-      }
-      if ("startDate" in sanitized) sanitized.startDate = this.ensureIsoDate(sanitized.startDate);
-      if ("endDate" in sanitized) sanitized.endDate = this.ensureIsoDate(sanitized.endDate);
-      if ("createdAt" in sanitized) sanitized.createdAt = this.ensureIsoDate(sanitized.createdAt);
-      if ("updatedAt" in sanitized) sanitized.updatedAt = this.ensureIsoDate(sanitized.updatedAt);
-    }
 
     if (table === "Subject") {
       if ("createdAt" in sanitized) sanitized.createdAt = this.ensureIsoDate(sanitized.createdAt);
@@ -273,10 +249,7 @@ export class SyncController {
       fallback.endTime = fallback.endTime || "09:00";
     } else if (table === "Subject") {
       fallback.name = fallback.name || "Untitled Subject";
-    } else if (table === "SemesterRule") {
-      fallback.startDate = fallback.startDate || new Date().toISOString();
-      fallback.dayOfWeek = fallback.dayOfWeek ?? 1;
-      fallback.setType = fallback.setType || "A";
+
     }
 
     return fallback;

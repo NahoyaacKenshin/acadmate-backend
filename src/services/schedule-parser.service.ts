@@ -196,7 +196,7 @@ Return ONLY a valid JSON object matching this exact shape:
 
 CRITICAL RULES:
 - NEVER put examination schedules or exam test slots into classSchedules! If the document is an examination schedule, return classSchedules as [] and put all exam slots into examEvents.
-- modality: strictly "F2F" or "ONLINE" (do NOT use "HYBRID"). If a class is conducted online or room mentions "ONLINE", "Canvas", "Zoom", "Virtual", "MS Teams", set modality to "ONLINE" and room to null (unless a specific meeting link or URL is provided).
+- modality: strictly "F2F" or "ONLINE". If a class is conducted online or room mentions "ONLINE", "Canvas", "Zoom", "Virtual", "MS Teams", set modality to "ONLINE" and room to null (unless a specific meeting link or URL is provided).
 - All dates MUST have strictly 2-digit months and days (e.g. "2026-08-11" NOT "2026-8-11").
 - All times MUST have strictly 2-digit hours and minutes (e.g. "08:00" NOT "8:00").
 - If no items exist for an array, return [].

@@ -13,7 +13,7 @@ export const createClassScheduleSchema = z.object({
       .string()
       .regex(timeRegex, "endTime must be in HH:MM 24-hour format"),
     room: z.string().max(100).optional().nullable(),
-    modality: z.enum(["F2F", "ONLINE", "HYBRID"]).optional(),
+    modality: z.enum(["F2F", "ONLINE"]).optional(),
     setType: z.enum(["A", "B", "BOTH"]).optional().nullable(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date().optional().nullable(),
@@ -31,7 +31,7 @@ export const updateClassScheduleSchema = z.object({
     startTime: z.string().regex(timeRegex, "startTime must be in HH:MM 24-hour format").optional(),
     endTime: z.string().regex(timeRegex, "endTime must be in HH:MM 24-hour format").optional(),
     room: z.string().max(100).optional().nullable(),
-    modality: z.enum(["F2F", "ONLINE", "HYBRID"]).optional(),
+    modality: z.enum(["F2F", "ONLINE"]).optional(),
     setType: z.enum(["A", "B", "BOTH"]).optional().nullable(),
     startDate: z.coerce.date().optional(),
     endDate: z.coerce.date().optional().nullable(),

@@ -8,7 +8,7 @@ import calendarEventRoutes from "@/routes/calendar-event.routes";
 import holidayRoutes from "@/routes/holiday.routes";
 import scheduleParserRoutes from "@/routes/schedule-parser.routes";
 import notebookRoutes from "@/routes/notebook.routes";
-// import aiRoutes from "@/routes/ai.routes";
+import { verifyGeminiKey } from "@/utils/gemini";
 
 const router = Router();
 
@@ -36,11 +36,19 @@ router.use("/sync", syncRoutes);
 // AI Schedule Parser Endpoint
 router.use("/schedule-parser", scheduleParserRoutes);
 
-// AI Notebook Endpoints (Week 5)
+// AI Notebook Endpoints
 router.use("/notebooks", notebookRoutes);
 
-// AI Chat Endpoints (future)
-// router.use("/ai", aiRoutes);
+// AI BYOK Key Verification Endpoint
+router.post("/ai/verify-key", async (req, res) => {
+  const { apiKey } = req.body;
+  const result = await verifyGeminiKey(apiKey);
+  if (result.valid) {
+    res.status(200).json({ status: "success", valid: true, message: "Gemini API key is verified and active!" });
+  } else {
+    res.status(400).json({ status: "error", valid: false, message: result.error });
+  }
+});
 
 export default router;
-
+

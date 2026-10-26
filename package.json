@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
     "typecheck": "tsc --noEmit",
+    "docs": "tsx scripts/docs/buildAll.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "prisma": {
@@ -51,6 +52,7 @@
     "@types/nodemailer": "^8.0.0",
     "@types/pdf-parse": "^1.1.5",
     "@types/pg": "^8.20.0",
+    "docx": "^9.11.0",
     "eslint": "^10.4.1",
     "globals": "^17.6.0",
     "prisma": "^7.8.0",

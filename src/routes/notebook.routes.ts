@@ -10,10 +10,10 @@
  * POST   /api/notebooks/:notebookId/sources                     — upload a source file (multer)
  * DELETE /api/notebooks/:notebookId/sources/:sourceId           — delete a source
  *
- * ── AI Chat (Week 6) ──────────────────────────────────────────────────────────
+ * ── AI Chat ──────────────────────────────────────────────────────────
  * POST   /api/notebooks/:notebookId/chat                        — RAG chat; persists session + messages
  *
- * ── Conversation History (Week 7) ─────────────────────────────────────────────
+ * ── Conversation History ─────────────────────────────────────────────
  * GET    /api/notebooks/:notebookId/chat/history                — list all chat sessions
  * GET    /api/notebooks/:notebookId/chat/history/:sessionId     — get session messages
  * DELETE /api/notebooks/:notebookId/chat/history/:sessionId     — delete a session

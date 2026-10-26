@@ -3,6 +3,7 @@ import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import { ENV } from '@/config/env';
+import { aiKeyMiddleware } from '@/utils/gemini';
 import routes from '@/routes';
 
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/auth/v1/reset-password', authLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(aiKeyMiddleware);
 
 // --- Simple Health Check ---
 app.get('/', (req: Request, res: Response) => {

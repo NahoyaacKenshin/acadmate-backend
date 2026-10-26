@@ -50,7 +50,7 @@ export class NotebookToolsController {
         count: count ? Number(count) : undefined,
         title,
       });
-      res.status(201).json({ status: 'success', data: deck });
+      res.status(202).json({ status: 'success', data: deck });
     } catch (err) {
       this.handleError(res, err, 'generateFlashcards');
     }
@@ -178,7 +178,7 @@ export class NotebookToolsController {
         count: count ? Number(count) : undefined,
         title,
       });
-      res.status(201).json({ status: 'success', data: quiz });
+      res.status(202).json({ status: 'success', data: quiz });
     } catch (err) {
       this.handleError(res, err, 'generateQuiz');
     }
